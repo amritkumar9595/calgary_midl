@@ -1,0 +1,219 @@
+2021-01-02 17:04:01,931 INFO    MainThread:20334 [internal.py:wandb_internal():63] W&B internal server running at pid: 20334
+2021-01-02 17:04:01,933 DEBUG   HandlerThread:20334 [handler.py:handle_request():55] handle_request: check_version
+2021-01-02 17:04:01,934 INFO    WriterThread:20334 [datastore.py:open_for_write():76] open: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/run-30cchx84.wandb
+2021-01-02 17:04:01,935 DEBUG   SenderThread:20334 [sender.py:send():90] send: header
+2021-01-02 17:04:01,935 DEBUG   SenderThread:20334 [sender.py:send():90] send: request
+2021-01-02 17:04:01,935 DEBUG   SenderThread:20334 [sender.py:send_request():99] send_request: check_version
+2021-01-02 17:04:01,939 DEBUG   Thread-4  :20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): pypi.org:443
+2021-01-02 17:04:01,974 DEBUG   Thread-4  :20334 [connectionpool.py:_make_request():461] https://pypi.org:443 "GET /pypi/wandb/json HTTP/1.1" 200 52216
+2021-01-02 17:04:01,986 DEBUG   SenderThread:20334 [sender.py:send():90] send: run
+2021-01-02 17:04:01,988 DEBUG   SenderThread:20334 [cmd.py:execute():719] Popen(['git', 'rev-parse', '--show-toplevel'], cwd=/home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl, universal_newlines=False, shell=None, istream=None)
+2021-01-02 17:04:01,995 DEBUG   SenderThread:20334 [cmd.py:execute():719] Popen(['git', 'cat-file', '--batch-check'], cwd=/home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl, universal_newlines=False, shell=None, istream=<valid stream>)
+2021-01-02 17:04:02,006 DEBUG   SenderThread:20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): api.wandb.ai:443
+2021-01-02 17:04:02,148 DEBUG   SenderThread:20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /graphql HTTP/1.1" 200 None
+2021-01-02 17:04:02,154 DEBUG   HandlerThread:20334 [handler.py:handle_request():55] handle_request: run_start
+2021-01-02 17:04:02,154 INFO    SenderThread:20334 [dir_watcher.py:__init__():165] watching files in: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files
+2021-01-02 17:04:02,155 INFO    SenderThread:20334 [sender.py:_start_run_threads():490] run started: 30cchx84 with start time 1609607041
+2021-01-02 17:04:02,155 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:02,155 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:02,166 DEBUG   HandlerThread:20334 [cmd.py:execute():719] Popen(['git', 'cat-file', '--batch-check'], cwd=/home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl, universal_newlines=False, shell=None, istream=<valid stream>)
+2021-01-02 17:04:02,174 DEBUG   HandlerThread:20334 [cmd.py:execute():719] Popen(['git', 'rev-parse', '--show-toplevel'], cwd=/home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl, universal_newlines=False, shell=None, istream=None)
+2021-01-02 17:04:02,179 DEBUG   HandlerThread:20334 [cmd.py:execute():719] Popen(['git', 'rev-parse', '--show-toplevel'], cwd=/home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl, universal_newlines=False, shell=None, istream=None)
+2021-01-02 17:04:02,184 DEBUG   HandlerThread:20334 [cmd.py:execute():719] Popen(['git', 'rev-parse', '--show-toplevel'], cwd=/home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl, universal_newlines=False, shell=None, istream=None)
+2021-01-02 17:04:02,188 DEBUG   HandlerThread:20334 [cmd.py:execute():719] Popen(['git', 'version'], cwd=/home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl, universal_newlines=False, shell=None, istream=None)
+2021-01-02 17:04:02,193 DEBUG   HandlerThread:20334 [cmd.py:execute():719] Popen(['git', 'diff', '--cached', '--abbrev=40', '--full-index', '--raw'], cwd=/home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl, universal_newlines=False, shell=None, istream=None)
+2021-01-02 17:04:02,197 DEBUG   HandlerThread:20334 [cmd.py:execute():719] Popen(['git', 'diff', '--abbrev=40', '--full-index', '--raw'], cwd=/home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl, universal_newlines=False, shell=None, istream=None)
+2021-01-02 17:04:02,203 DEBUG   HandlerThread:20334 [cmd.py:execute():719] Popen(['git', 'merge-base', 'HEAD', 'd4ef76a27308609a4b469cdb9f8800caa5f1aa74'], cwd=/home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl, universal_newlines=False, shell=None, istream=None)
+2021-01-02 17:04:02,212 DEBUG   SenderThread:20334 [sender.py:send():90] send: files
+2021-01-02 17:04:02,212 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-metadata.json with policy now
+2021-01-02 17:04:02,212 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file code/train_var12.py with policy now
+2021-01-02 17:04:02,218 DEBUG   Thread-11 :20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): api.wandb.ai:443
+2021-01-02 17:04:02,219 DEBUG   HandlerThread:20334 [handler.py:handle_request():55] handle_request: status
+2021-01-02 17:04:02,219 DEBUG   SenderThread:20334 [sender.py:send():90] send: request
+2021-01-02 17:04:02,219 DEBUG   SenderThread:20334 [sender.py:send_request():99] send_request: status
+2021-01-02 17:04:02,222 DEBUG   SenderThread:20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): api.wandb.ai:443
+2021-01-02 17:04:02,226 DEBUG   Thread-12 :20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): api.wandb.ai:443
+2021-01-02 17:04:02,313 DEBUG   SenderThread:20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /graphql HTTP/1.1" 200 None
+2021-01-02 17:04:02,320 DEBUG   Thread-12 :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /graphql HTTP/1.1" 200 None
+2021-01-02 17:04:02,322 DEBUG   Thread-11 :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /graphql HTTP/1.1" 200 None
+2021-01-02 17:04:02,327 DEBUG   Thread-11 :20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): storage.googleapis.com:443
+2021-01-02 17:04:02,339 DEBUG   Thread-12 :20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): storage.googleapis.com:443
+2021-01-02 17:04:02,594 DEBUG   Thread-11 :20334 [connectionpool.py:_make_request():461] https://storage.googleapis.com:443 "PUT /wandb-production.appspot.com/amritkumar/calgary_midl/30cchx84/wandb-metadata.json?Expires=1609693442&GoogleAccessId=wandb-production%40appspot.gserviceaccount.com&Signature=WCkDR4USvsAjLYyV3qAOB0TZMX44zND3qFOxuYbHI3BKZ0YNaLbBMSSwMG3P8nOuxJPuq1EbsHPbSiFIuk2LE6z%2FoQG1YHjaSuOSm8ca54z1%2F1RnaeY8Lwuu8%2F7Kfq1hn5PULV3bQKthSIxYj10k4vMlTHK3RP3Ox3zGgyzS4E70lOYvkeE%2FM2CZpKhzRZ6q4hqdYarLyli6e%2B6BwOgTsJDPxIpG5IV2UxI2x92kXEiNvWzPxBiOjjGL05n6ZUKdzgtFcQceypRmrG%2FBh0LBN0htzz0%2F%2B2V5yTo4q5lVkoLHeycLnJSlM4ZcS24ZI8mPfQr9jJbNWj3ps7UQu5wc3g%3D%3D HTTP/1.1" 200 0
+2021-01-02 17:04:02,596 INFO    Thread-11 :20334 [upload_job.py:push():131] Uploaded file /tmp/tmp4dl7hojqwandb/2wj1i99f-wandb-metadata.json
+2021-01-02 17:04:02,601 DEBUG   Thread-12 :20334 [connectionpool.py:_make_request():461] https://storage.googleapis.com:443 "PUT /wandb-production.appspot.com/amritkumar/calgary_midl/30cchx84/code/train_var12.py?Expires=1609693442&GoogleAccessId=wandb-production%40appspot.gserviceaccount.com&Signature=duIlMOQ76mOJBDeIcKUDUoHfkqqWaD6O%2FDwWqvpNdsmyS%2BGhukb%2FUdCNMNKWoXCCvksjf7vFxXWRNljqr%2FsEAEyPotsF96X9drnTmo9NxQtVvorACMGSazRc%2B1OHalvurSDxOoNeBO%2F1bc9%2FauAVhzrl59pIan8WWyJabV%2FOyTRfyCH0Ayag5SDskybO4JrV0gUmodCSOVfsn4rtpbi%2B3oLoCsKHBBPqkHVfMLYxaX%2FmKfW4zn34WufNNBmK0LQK%2B20vv0Ygq%2B8ujcTMCiTfcSJIyG9jLsw8oK4jr0JFhp%2Faapoy4Kg8sTQvqE16nulFr8V2age0MIly9HUJs2nxrQ%3D%3D HTTP/1.1" 200 0
+2021-01-02 17:04:02,604 INFO    Thread-12 :20334 [upload_job.py:push():131] Uploaded file /tmp/tmp4dl7hojqwandb/2oibkyga-code/train_var12.py
+2021-01-02 17:04:03,155 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_created():213] file/dir created: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/output.log
+2021-01-02 17:04:03,156 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_created():213] file/dir created: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/wandb-summary.json
+2021-01-02 17:04:03,156 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_created():213] file/dir created: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/code/train_var12.py
+2021-01-02 17:04:03,156 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_created():213] file/dir created: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/requirements.txt
+2021-01-02 17:04:03,156 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_created():213] file/dir created: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/wandb-metadata.json
+2021-01-02 17:04:03,156 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_created():213] file/dir created: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/code
+2021-01-02 17:04:04,157 DEBUG   Thread-5  :20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): api.wandb.ai:443
+2021-01-02 17:04:04,258 DEBUG   Thread-5  :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /files/amritkumar/calgary_midl/30cchx84/file_stream HTTP/1.1" 200 None
+2021-01-02 17:04:05,154 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_modified():226] file/dir modified: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/output.log
+2021-01-02 17:04:05,529 DEBUG   SenderThread:20334 [sender.py:send():90] send: stats
+2021-01-02 17:04:07,647 DEBUG   Thread-5  :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /files/amritkumar/calgary_midl/30cchx84/file_stream HTTP/1.1" 200 None
+2021-01-02 17:04:09,976 DEBUG   SenderThread:20334 [sender.py:send():90] send: stats
+2021-01-02 17:04:10,072 DEBUG   Thread-5  :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /files/amritkumar/calgary_midl/30cchx84/file_stream HTTP/1.1" 200 None
+2021-01-02 17:04:14,433 DEBUG   SenderThread:20334 [sender.py:send():90] send: stats
+2021-01-02 17:04:14,553 DEBUG   Thread-5  :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /files/amritkumar/calgary_midl/30cchx84/file_stream HTTP/1.1" 200 None
+2021-01-02 17:04:17,316 DEBUG   HandlerThread:20334 [handler.py:handle_request():55] handle_request: status
+2021-01-02 17:04:17,316 DEBUG   SenderThread:20334 [sender.py:send():90] send: request
+2021-01-02 17:04:17,317 DEBUG   SenderThread:20334 [sender.py:send_request():99] send_request: status
+2021-01-02 17:04:17,321 DEBUG   SenderThread:20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): api.wandb.ai:443
+2021-01-02 17:04:17,410 DEBUG   SenderThread:20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /graphql HTTP/1.1" 200 None
+2021-01-02 17:04:18,896 DEBUG   SenderThread:20334 [sender.py:send():90] send: stats
+2021-01-02 17:04:19,001 DEBUG   Thread-5  :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /files/amritkumar/calgary_midl/30cchx84/file_stream HTTP/1.1" 200 None
+2021-01-02 17:04:23,363 DEBUG   SenderThread:20334 [sender.py:send():90] send: stats
+2021-01-02 17:04:23,467 DEBUG   Thread-5  :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /files/amritkumar/calgary_midl/30cchx84/file_stream HTTP/1.1" 200 None
+2021-01-02 17:04:25,163 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_modified():226] file/dir modified: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/output.log
+2021-01-02 17:04:26,564 DEBUG   SenderThread:20334 [sender.py:send():90] send: files
+2021-01-02 17:04:26,564 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file media/graph/graph_0_summary_54dbc36c.graph.json with policy now
+2021-01-02 17:04:26,564 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:26,567 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:26,567 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:26,568 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:26,572 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:26,572 DEBUG   Thread-13 :20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): api.wandb.ai:443
+2021-01-02 17:04:26,572 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:26,574 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:26,574 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:26,577 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:26,577 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:26,581 DEBUG   SenderThread:20334 [sender.py:send():90] send: files
+2021-01-02 17:04:26,581 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file media/graph/graph_1_summary_ebac8995.graph.json with policy now
+2021-01-02 17:04:26,581 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:26,581 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:26,585 DEBUG   Thread-14 :20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): api.wandb.ai:443
+2021-01-02 17:04:26,632 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:26,633 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:26,634 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:26,673 DEBUG   Thread-13 :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /graphql HTTP/1.1" 200 None
+2021-01-02 17:04:26,678 DEBUG   Thread-13 :20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): storage.googleapis.com:443
+2021-01-02 17:04:26,684 DEBUG   Thread-14 :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /graphql HTTP/1.1" 200 None
+2021-01-02 17:04:26,688 DEBUG   Thread-14 :20334 [connectionpool.py:_new_conn():975] Starting new HTTPS connection (1): storage.googleapis.com:443
+2021-01-02 17:04:26,698 DEBUG   Thread-5  :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /files/amritkumar/calgary_midl/30cchx84/file_stream HTTP/1.1" 200 None
+2021-01-02 17:04:26,770 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:26,770 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:26,771 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:26,896 DEBUG   Thread-14 :20334 [connectionpool.py:_make_request():461] https://storage.googleapis.com:443 "PUT /wandb-production.appspot.com/amritkumar/calgary_midl/30cchx84/media/graph/graph_1_summary_ebac8995.graph.json?Expires=1609693466&GoogleAccessId=wandb-production%40appspot.gserviceaccount.com&Signature=EGpqy7jj0c5wkT6oCpdXjnZPvV1DR5goPfrufdc0nhfOiG4C8iRGDRlB%2FgA7W2ye9yl4CsowV5jBqpZ6zFrTxf8kPZ56B5a9NVKCQtTvBF72ALQAZlh7qzrNTKDp7RHNxAI7ymQQVjOD7rCAO3fOk0IMsx2y15IIg6L529ikiAqfJP38rWdfbIV%2BPjX20xs26DcxfuBMXBuBdpOedMcBvLGv8hR4tbWzd2u0%2Fnh8cXwTVj6xtDBqusuPmcE0kzwH6jg%2FrajFHztlbDIegNxcItzXculQSb%2BglFuUx0hF1vCpMaLzYq%2Bp5cqXxtpaqxb%2BErvbh1IuAh1x8943Bykjeg%3D%3D HTTP/1.1" 200 0
+2021-01-02 17:04:26,898 INFO    Thread-14 :20334 [upload_job.py:push():131] Uploaded file /tmp/tmp4dl7hojqwandb/32k8kbw1-media/graph/graph_1_summary_ebac8995.graph.json
+2021-01-02 17:04:26,898 DEBUG   Thread-13 :20334 [connectionpool.py:_make_request():461] https://storage.googleapis.com:443 "PUT /wandb-production.appspot.com/amritkumar/calgary_midl/30cchx84/media/graph/graph_0_summary_54dbc36c.graph.json?Expires=1609693466&GoogleAccessId=wandb-production%40appspot.gserviceaccount.com&Signature=M0NKO0sEEa3%2BUdAxxgjJ4WvJXu2jyxhFapp7NEE6DJ0vyyxylJAe4sSfuATXJRj9hvDqQv8lrmQpfPxAQNypDUVMJB0HHsDSMF%2FPxchFsUgA9f6n0lnE4BxrbnA3rp1rj2FXrR0jledMlWL%2B02AUdUgUOuzHyfMk1z3%2BFzRjCuGx7zhcELtJPG%2FwwXSu0QWJkg7IbtJVET1rVfsugJDV0itEbPqZwRaoS7iWdFpj1L5eSqneX1sn286IFDl5Ln6%2FluYIaqn4%2BvjU%2Be772AOdRX%2Fj6z0SbWpqxmUcr6CbVdJb0gE0CS3dT5HV6c3bby6KQjVK6Vqxgn1qaCJKt8W6tw%3D%3D HTTP/1.1" 200 0
+2021-01-02 17:04:26,900 INFO    Thread-13 :20334 [upload_job.py:push():131] Uploaded file /tmp/tmp4dl7hojqwandb/78bt8kdv-media/graph/graph_0_summary_54dbc36c.graph.json
+2021-01-02 17:04:26,904 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:26,905 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:26,905 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:27,033 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:27,034 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:27,035 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:27,160 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:27,161 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:27,161 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:27,164 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_modified():226] file/dir modified: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/output.log
+2021-01-02 17:04:27,165 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_modified():226] file/dir modified: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/wandb-summary.json
+2021-01-02 17:04:27,165 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_created():213] file/dir created: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/media/graph/graph_0_summary_54dbc36c.graph.json
+2021-01-02 17:04:27,165 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_created():213] file/dir created: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/media/graph/graph_1_summary_ebac8995.graph.json
+2021-01-02 17:04:27,166 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_created():213] file/dir created: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/media
+2021-01-02 17:04:27,166 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_created():213] file/dir created: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/media/graph
+2021-01-02 17:04:27,312 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:27,312 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:27,313 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:27,442 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:27,442 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:27,443 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:27,580 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:27,580 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:27,581 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:27,708 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:27,709 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:27,710 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:27,837 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:27,837 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:27,838 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:27,848 DEBUG   SenderThread:20334 [sender.py:send():90] send: stats
+2021-01-02 17:04:27,980 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:27,980 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:27,981 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:28,107 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:28,108 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:28,108 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:28,165 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_modified():226] file/dir modified: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/output.log
+2021-01-02 17:04:28,165 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_modified():226] file/dir modified: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/wandb-summary.json
+2021-01-02 17:04:28,239 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:28,239 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:28,240 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:28,379 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:28,379 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:28,380 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:28,520 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:28,520 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:28,521 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:28,647 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:28,647 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:28,651 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:28,756 DEBUG   Thread-5  :20334 [connectionpool.py:_make_request():461] https://api.wandb.ai:443 "POST /files/amritkumar/calgary_midl/30cchx84/file_stream HTTP/1.1" 200 None
+2021-01-02 17:04:28,778 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:28,778 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:28,779 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:28,908 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:28,908 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:28,909 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:29,033 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:29,034 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:29,034 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:29,166 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_modified():226] file/dir modified: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/output.log
+2021-01-02 17:04:29,166 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_modified():226] file/dir modified: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/wandb-summary.json
+2021-01-02 17:04:29,178 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:29,178 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:29,178 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:29,321 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:29,321 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:29,322 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:29,447 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:29,447 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:29,448 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:29,576 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:29,576 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:29,577 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:29,706 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:29,706 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:29,707 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:29,844 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:29,844 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:29,845 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:29,975 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:29,975 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:29,975 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:30,103 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:30,103 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:30,104 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:30,166 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_modified():226] file/dir modified: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/output.log
+2021-01-02 17:04:30,167 INFO    Thread-8  :20334 [dir_watcher.py:_on_file_modified():226] file/dir modified: /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210102_170401-30cchx84/files/wandb-summary.json
+2021-01-02 17:04:30,237 DEBUG   SenderThread:20334 [sender.py:send():90] send: history
+2021-01-02 17:04:30,237 DEBUG   SenderThread:20334 [sender.py:send():90] send: summary
+2021-01-02 17:04:30,237 INFO    SenderThread:20334 [sender.py:_save_file():568] saving file wandb-summary.json with policy end
+2021-01-02 17:04:30,276 WARNING MainThread:20334 [internal.py:wandb_internal():117] Internal process interrupt: 1
+2021-01-02 17:04:30,434 DEBUG   HandlerThread:20334 [handler.py:handle_request():55] handle_request: poll_exit
+2021-01-02 17:04:30,434 DEBUG   SenderThread:20334 [sender.py:send():90] send: exit
+2021-01-02 17:04:30,434 INFO    SenderThread:20334 [sender.py:send_exit():168] handling exit code: 255
+2021-01-02 17:04:30,434 INFO    SenderThread:20334 [sender.py:send_exit():176] send defer
+2021-01-02 17:04:30,434 DEBUG   SenderThread:20334 [sender.py:send():90] send: request
+2021-01-02 17:04:30,434 DEBUG   SenderThread:20334 [sender.py:send_request():99] send_request: poll_exit
+2021-01-02 17:04:30,435 DEBUG   HandlerThread:20334 [handler.py:handle_request():55] handle_request: defer
+2021-01-02 17:04:30,435 INFO    HandlerThread:20334 [handler.py:handle_request_defer():69] handle defer: 0
+2021-01-02 17:04:30,435 DEBUG   SenderThread:20334 [sender.py:send():90] send: request
+2021-01-02 17:04:30,435 DEBUG   SenderThread:20334 [sender.py:send_request():99] send_request: defer
+2021-01-02 17:04:30,435 INFO    SenderThread:20334 [sender.py:send_request_defer():185] handle sender defer: 0
+2021-01-02 17:04:30,435 INFO    SenderThread:20334 [sender.py:send_request_defer():221] send defer: 1
+2021-01-02 17:04:30,436 DEBUG   HandlerThread:20334 [handler.py:handle_request():55] handle_request: defer
+2021-01-02 17:04:30,436 INFO    HandlerThread:20334 [handler.py:handle_request_defer():69] handle defer: 1
+2021-01-02 17:04:30,490 WARNING MainThread:20334 [internal.py:wandb_internal():117] Internal process interrupt: 2
+2021-01-02 17:04:30,490 ERROR   MainThread:20334 [internal.py:wandb_internal():120] Internal process interrupted.
+2021-01-02 17:04:30,502 INFO    HandlerThread:20334 [handler.py:finish():271] shutting down handler
+2021-01-02 17:04:30,502 DEBUG   SenderThread:20334 [sender.py:send():90] send: request
+2021-01-02 17:04:30,502 DEBUG   SenderThread:20334 [sender.py:send_request():99] send_request: defer
+2021-01-02 17:04:30,502 INFO    SenderThread:20334 [sender.py:send_request_defer():185] handle sender defer: 1
+2021-01-02 17:04:30,502 INFO    SenderThread:20334 [sender.py:send_request_defer():221] send defer: 2
+2021-01-02 17:04:30,503 INFO    SenderThread:20334 [sender.py:finish():642] shutting down sender
+2021-01-02 17:04:30,503 INFO    SenderThread:20334 [dir_watcher.py:finish():279] shutting down directory watcher
+2021-01-02 17:04:30,869 INFO    MainThread:20334 [internal.py:handle_exit():138] Internal process exited
