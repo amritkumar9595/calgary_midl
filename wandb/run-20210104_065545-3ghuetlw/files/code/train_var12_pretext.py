@@ -1,8 +1,6 @@
 """
-step1: Train magnitude and phase network (U-Net) separately.
-Step2: Combine magnitude and phase, to obtain the complex image and then train magnitude and phase networks train jointly.
-Step3: the model is modified by appending Convnets after the magnitude and phase networks and is trained end to end.
-
+Pre-training the Variatioanl Network with undersampled images only
+Focus is on learning the features , by learning the sensitivity maps
 """
 
 import logging
@@ -60,14 +58,14 @@ def create_data_loaders(args,data_path):
         dataset=train_data,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=8,
+        num_workers=4,
         pin_memory=True,
     )
 
     dev_loader = DataLoader(
         dataset=dev_data,
         batch_size=args.batch_size,
-        num_workers=8,
+        num_workers=4,
         pin_memory=True,
     )
     display_loader = DataLoader(
@@ -108,7 +106,7 @@ def train_epoch(args, epoch,model_vs, model_sens, data_loader,optimizer_vs):
         mask = mask.to(args.device)
         img_us = img_us.to(args.device)
         # img_gt = img_gt.to(args.device)
-        img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
+        img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
 
         
         sens = model_sens(ksp_us, mask)
@@ -122,11 +120,11 @@ def train_epoch(args, epoch,model_vs, model_sens, data_loader,optimizer_vs):
         # loss_cmplx = F.mse_loss(out,img_gt_np.cuda())
         
         if(args.loss == 'SSIM'):
-            loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
-            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
+            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
         else:
-            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
-            loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
+            loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
 
         
         
@@ -179,7 +177,7 @@ def evaluate(args, epoch,  model_vs ,model_sens,  data_loader):
             mask = mask.to(args.device)
             # img_gt = img_gt.to(args.device)
             img_us = img_us.to(args.device)
-            img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
+            img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
             
             sens = model_sens(ksp_us, mask)
             img_us =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
@@ -187,11 +185,11 @@ def evaluate(args, epoch,  model_vs ,model_sens,  data_loader):
 
         
         if(args.loss == 'SSIM'):
-            loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
-            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
+            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
         else:
-            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
-            loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
+            loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
           
             
         losses_cmplx.append(loss_cmplx.item())
@@ -238,6 +236,7 @@ def visualize(args, epoch,  model_vs, model_sens, data_loader):
             # img_gt = img_gt.to(args.device)
             img_us = img_us.to(args.device)
             img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
+            img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
             
             sens = model_sens(ksp_us, mask)
             # print("sens",sens.shape)
@@ -253,7 +252,7 @@ def visualize(args, epoch,  model_vs, model_sens, data_loader):
             # print("img_us_cmplx_abs",img_us_cmplx_abs.shape)
             # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             
-            error_cmplx = torch.abs(out.cuda() - img_gt_np.cuda())
+            error_cmplx = torch.abs(out.cuda() - img_us_np.cuda())
             # print("error_complex",error_cmplx.shape)
             # error_cmplx_abs = (torch.sqrt(error_cmplx[:,:,:,0]**2 + error_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             sens = sens.squeeze(0)
@@ -274,7 +273,7 @@ def visualize(args, epoch,  model_vs, model_sens, data_loader):
             # save_image(error_cmplx,'Error')
             # out = save_image(out, 'Recons')
             # print("img_us",img_us_np.shape)
-            wandb.log({"img": [wandb.Image(norm_image(img_us_np.unsqueeze(0)), caption="US-Image"), wandb.Image(norm_image(out), caption="Reconstruction"),
+            wandb.log({"pre-text task for VarNet-12": [wandb.Image(norm_image(img_us_np.unsqueeze(0)), caption="US-Image"), wandb.Image(norm_image(out), caption="Reconstruction"),
             wandb.Image(norm_image(img_gt_np.unsqueeze(0)), caption="GT-Image"),wandb.Image(norm_image(error_cmplx), caption="Error")]})
             # save_image(img_gt_np,'Target')
             

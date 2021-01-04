@@ -3,10 +3,11 @@ NUM_EPOCHS=150
 DEVICE='cuda:0'
 RESUME='False'
            
-SAMPLE_RATE=0.1
+SAMPLE_RATE=1.0
 
                                             ## 12 channel data ##
-#<<ACC_FACTOR_5x
+
+<<ACC_FACTOR_5x
 LOSS='SSIM'
 DROPOUT=0.0
 DATA_PATH="/home/ubuntu/volume1/MIDL-challenge/Data2" 
@@ -16,7 +17,22 @@ EXP_DIR='/home/ubuntu/volume1/MIDL-challenge/Amrit/experiments/varnet/acc_'${ACC
 CHECKPOINT='/home/ubuntu/volume1/MIDL-challenge/Amrit/experiments/varnet/acc_5x/12-channels/'${LOSS}'_loss/vs_model.pt'
 
 python train_var12.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT} --dropout ${DROPOUT} --loss ${LOSS}
+ACC_FACTOR_5x
+
+#<<ACC_FACTOR_5x
+LOSS='SSIM'
+DROPOUT=0.0
+DATA_PATH="/home/ubuntu/volume1/MIDL-challenge/Data2" 
+ACC_FACTOR=5
+ACC='5x'
+EXP_DIR='/home/ubuntu/volume1/MIDL-challenge/Amrit/experiments/varnet/acc_'${ACC}'/12-channels/pretext/'${LOSS}'_loss'
+CHECKPOINT='/home/ubuntu/volume1/MIDL-challenge/Amrit/experiments/varnet/acc_5x/12-channels/pretext/'${LOSS}'_loss/vs_model.pt'
+
+python train_var12_pretext.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT} --dropout ${DROPOUT} --loss ${LOSS}
 #ACC_FACTOR_5x
+
+
+
 
 
 

@@ -1,0 +1,15 @@
+2021-01-04 06:55:45,645 INFO    MainThread:26662 [wandb_setup.py:_flush():70] setting env: {}
+2021-01-04 06:55:45,645 INFO    MainThread:26662 [wandb_setup.py:_flush():70] multiprocessing start_methods=fork,spawn,forkserver
+2021-01-04 06:55:45,645 INFO    MainThread:26662 [wandb_setup.py:_flush():70] setting login settings: {}
+2021-01-04 06:55:45,645 INFO    MainThread:26662 [wandb_init.py:_log_setup():303] Logging user logs to /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210104_065545-3ghuetlw/logs/debug.log
+2021-01-04 06:55:45,645 INFO    MainThread:26662 [wandb_init.py:_log_setup():304] Logging internal logs to /home/ubuntu/volume1/MIDL-challenge/Amrit/calgary_midl/wandb/run-20210104_065545-3ghuetlw/logs/debug-internal.log
+2021-01-04 06:55:47,464 INFO    MainThread:26662 [wandb_run.py:_console_start():1237] atexit reg
+2021-01-04 06:55:47,464 INFO    MainThread:26662 [wandb_run.py:_redirect():1104] redirect: SettingsConsole.REDIRECT
+2021-01-04 06:55:47,466 INFO    MainThread:26662 [wandb_run.py:_redirect():1107] Redirecting console.
+2021-01-04 06:55:47,466 INFO    MainThread:26662 [redirect.py:install():204] install start
+2021-01-04 06:55:47,469 INFO    MainThread:26662 [redirect.py:install():219] install stop
+2021-01-04 06:55:47,469 INFO    MainThread:26662 [redirect.py:install():204] install start
+2021-01-04 06:55:47,469 INFO    MainThread:26662 [redirect.py:install():219] install stop
+2021-01-04 06:55:47,469 INFO    MainThread:26662 [wandb_run.py:_redirect():1151] Redirects installed.
+2021-01-04 11:22:29,361 INFO    MainThread:26662 [wandb_watch.py:watch():35] Watching
+2021-01-04 11:22:29,364 INFO    MainThread:26662 [wandb_watch.py:watch():35] Watching
