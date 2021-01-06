@@ -12,8 +12,9 @@ import os
 from tqdm import tqdm
 
 
-root = '/media/student1/RemovableVolume/calgary_new/calgary_32_additional_data/Train/'   ## to generate training slices
+# root = '/media/student1/RemovableVolume/calgary_new/calgary_32_additional_data/Train/'   ## to generate training slices
 # root = '/media/student1/RemovableVolume/calgary_new/calgary_32_additional_data/Val/'
+root = '/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/'
 
 files = list(pathlib.Path(root).iterdir())
 
@@ -25,16 +26,12 @@ for fname in sorted(files):
 
 print("total number of slices = ",len(examples))
 
-examples = []
-fname = pathlib.Path('/media/student1/RemovableVolume/calgary_new/calgary_32_additional_data/Train/e16477s3_P33280.7.h5')
-num_slices = 256 #kspace.shape[0]
-examples += [(fname, slice) for slice in range(50,num_slices-50)]
 
 for i in tqdm(range(len(examples))):
     #     print("i=",i)
     fname, slice = examples[i]
     with h5py.File(fname, 'r') as data:
-            print("fname1",fname)
+
             kspace = data['kspace'][slice]
             sr = 0.85
             Nz = kspace.shape[1]
@@ -44,7 +41,7 @@ for i in tqdm(range(len(examples))):
             ksp_cmplx = kspace[:,:,::2] + 1j*kspace[:,:,1::2]
             
             parts = list(fname.parts)
-            parts[5]='calgary_32_additional_sens'
+            parts[5]='sens'
             path=pathlib.Path(*parts)  
             # print("path2",path)
             with open(path,'rb') as f:
@@ -62,8 +59,12 @@ for i in tqdm(range(len(examples))):
             n = parts[-1][:-2] + str(slice) + '.h5'
             parts[-1] = n
             
+            path_dir=(pathlib.Path(*parts[:-1]))
+            path_dir.mkdir(parents=True, exist_ok=True)
+            
             path=pathlib.Path(*parts)  
-            # print("path3",path)
+
+
             with h5py.File(str(path), 'w') as f:
                 f.create_dataset("kspace",     data=ksp_cmplx)
                 f.create_dataset("sensitivity",data=sensitivity)

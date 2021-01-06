@@ -475,14 +475,15 @@ class dataConsistencyTerm(nn.Module):
         k_shift[:,:,:,Nz_sampled:,:] = 0
         
         v = self.noise_lvl
+
         if v is not None: # noisy case
             # out = (1 - mask) * k + mask * (k + v * k0) / (1 + v)
             out = (1 - mask) * k_shift + mask * (v * k_shift + (1 - v) * ksp) 
         
         else:
-            
+           
             out = (1 - mask) * k_shift + mask * ksp
-        
+            
         
         x = torch.ifft(out, 2, normalized=True)
     
@@ -544,7 +545,7 @@ class cnn_layer(nn.Module):
     
 class network(nn.Module):
     
-    def __init__(self, alfa=1, beta=1, cascades=5,dropout=0,op='rss'):
+    def __init__(self, alfa=1, beta=1, cascades=5):
         super(network, self).__init__()
         
         self.cascades = cascades 
@@ -561,10 +562,9 @@ class network(nn.Module):
         self.conv_blocks = nn.ModuleList(conv_blocks)
         self.dc_blocks = nn.ModuleList(dc_blocks)
         self.wa_blocks = nn.ModuleList(wa_blocks)
-        self.op = op
 
     def forward(self, x, k, m, c):
-        # print("X",x.shape)
+
         op=[]        
         for i in range(self.cascades):
             x_cnn = self.conv_blocks[i](x)
@@ -572,46 +572,54 @@ class network(nn.Module):
             Sx, SS = self.dc_blocks[i].perform(x, k, m, c)
             x = self.wa_blocks[i].perform(x + x_cnn, Sx, SS)
             op.append(x)
-        
-        if (self.op == 'abs'):
-            print("entering abs")
-            img_mag = torch.sqrt((x[0,:,:,0]**2 + x[0,:,:,1]**2))
-            return img_mag.unsqueeze(0).unsqueeze(0) , op
-        elif(self.op == 'rss'):
-            # print("entering rss")
-            img_mag = T.rss(x,m).float()
-            return img_mag , op
+ 
+        img_mag = T.rss(x,m).float()
+        return img_mag , op
     
-class loss_prediction_module(nn.Module):
+
+class classifier(nn.Module):
     
     def __init__(self):
-        super(loss_prediction_module, self).__init__()
-        self.avgpool = self.avgpool = nn.AdaptiveAvgPool2d((1,1))
-        self.fc1 = nn.Sequential(nn.Linear(218, 128),nn.ReLU(inplace=True))
-        self.fc2 = nn.Sequential(nn.Linear(218, 128),nn.ReLU(inplace=True))
-        self.fc3 = nn.Sequential(nn.Linear(218, 128),nn.ReLU(inplace=True))
-        self.fc4 = nn.Sequential(nn.Linear(218, 128),nn.ReLU(inplace=True))
-        self.final = nn.Linear(512, 1)
+        super(classifier, self).__init__()
+
+        self.fc1 = nn.Linear(256*256, 256)
+        self.fc2 = nn.Linear(256, 32)
+        self.fc3 = nn.Linear(32, 4)
 
     def forward(self, x):
-        x[0] = self.avgpool(x[0])
-        x[0] = torch.flatten(x[0], 1)
-        # print("Shape",x[0].shape)
-        x[0] = self.fc1(x[0])
-        x[1] = self.avgpool(x[1])
-        x[1] = torch.flatten(x[1], 1)
-        x[1] = self.fc2(x[1])
-        x[2] = self.avgpool(x[2])
-        x[2] = torch.flatten(x[2], 1)
-        x[2] = self.fc3(x[2])
-        x[3] = self.avgpool(x[3])
-        x[3] = torch.flatten(x[3], 1)
-        x[3] = self.fc4(x[3])
-        final = torch.cat((x[0], x[1], x[2], x[3]), dim=1)
-        final = self.final(final) 
-        return final
 
-    
+        x = T.pad(x.squeeze(0).squeeze(0),[256,256]).unsqueeze(0)
+        x =  torch.flatten(x, 1)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
+class architecture(nn.Module):
+
+    def __init__(self,dccoeff=0.1,wacoeff=0.1,cascade=5,sens_chans=8, sens_pools=4):
+        super(architecture,self).__init__()
+        self.dccoeff = 0.1
+        self.wacoeff = 0.1
+        self.cascade = 5
+        self.sens_chans = 8
+        self.sens_pools = 4
+
+        self.model_vs = network(self.dccoeff, self.wacoeff, self.cascade)
+        self.model_sens = SensitivityModel(self.sens_chans, self.sens_pools)
+
+    def forward(self,img_us,ksp_us,mask):
+
+        sens = self.model_sens(ksp_us, mask)
+
+        img_us =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
+
+        out,outstack = self.model_vs(img_us,ksp_us,sens,mask)
+
+        return out, outstack, sens
+
+
     
     
 '''    
@@ -1362,6 +1370,7 @@ class SensitivityModel(nn.Module):
 
 
         def mask_centre(ksp,mask):
+            # print("mask",mask.shape)
             mask = mask.squeeze(0)
             x_c = mask.shape[0]//2
             y_c = mask.shape[1]//2

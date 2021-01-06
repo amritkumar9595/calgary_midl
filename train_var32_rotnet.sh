@@ -2,20 +2,21 @@ BATCH_SIZE=1
 NUM_EPOCHS=150
 DEVICE='cuda:0'
 RESUME='False'
-           
-SAMPLE_RATE=0.01
+LR=0.000001
 
-                                            ## 12 channel data ##
+SAMPLE_RATE=0.1
+
+                                            ## 32 channel , R = 5x data ##
 #<<ACC_FACTOR_5x
 LOSS='SSIM'
 DROPOUT=0.0
-DATA_PATH="/media/student1/RemovableVolume/calgary/"
+DATA_PATH="/media/student1/RemovableVolume/calgary/Test/test_32_channel/Test-R=5" 
 ACC_FACTOR=5
 ACC='5x'
 EXP_DIR='/media/student1/NewVolume/MR_Reconstruction/experiments/chal_exp/varnet/acc_'${ACC}'/12-channels/'${LOSS}'_loss'
-CHECKPOINT='/media/student1/NewVolume/MR_Reconstruction/experiments/chal_exp/varnet/'${LOSS}'_loss/vs_model.pt'
+CHECKPOINT='/media/student1/NewVolume/MR_Reconstruction/experiments/chal_exp/varnet/acc_'${ACC}'/12-channels/'${LOSS}'_loss/vs_model.pt'
 
-python train_var12.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT} --dropout ${DROPOUT} --loss ${LOSS}
+python train_var32_rotnet.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT} --dropout ${DROPOUT} --loss ${LOSS} --lr ${LR}
 #ACC_FACTOR_5x
 
 
