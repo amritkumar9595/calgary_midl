@@ -204,6 +204,7 @@ class DataTransform_rotnet:
         
         # mask = (torch.stack((mask,mask),dim=-1)).float()
         
+        sens_t = T.to_tensor(sensitivity)
 
         degrees = ('0' , '90' , '180' , '270')
 
@@ -287,5 +288,5 @@ class DataTransform_rotnet:
         
         # return   ksp_us/img_us_sens.max(), ksp_t/img_us_sens.max() ,  img_us_sens/img_us_sens.max(), img_gt_sens/img_us_sens.max() , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() , sens_t , mask ,img_us_sens.max(),img_us_np.max(),fname
         # print("randint=",randint)
-        return   ksp_t/img_us_np.max() , img_us/img_us_np.max(),  img_us_np/img_us_np.max() , randint ,   mask , img_us_np.max() , fname
+        return   ksp_t/img_us_np.max() , img_us/img_us_np.max(),  img_us_np/img_us_np.max() , randint ,   mask , sens_t ,  img_us_np.max() , fname
         # return   ksp_us, ksp_t ,  img_us, img_gt , img_us_np , img_gt_np , sens_t , mask ,img_us.max(),img_us_np.max(),fname

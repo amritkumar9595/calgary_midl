@@ -554,8 +554,7 @@ class network(nn.Module):
         wa_blocks = []
         
         for i in range(cascades):
-            conv_blocks.append(cnn_layer()) 
-            # conv_blocks.append(NormUnet(2,4)) 
+            conv_blocks.append(cnn_layer())  
             dc_blocks.append(dataConsistencyTerm(alfa)) 
             wa_blocks.append(weightedAverageTerm(beta)) 
 

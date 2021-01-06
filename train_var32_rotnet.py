@@ -93,7 +93,7 @@ def train_epoch(args, epoch,model, model_cla, data_loader,optimizer_vs,criterion
     
     for iter, data in enumerate(tqdm(data_loader)):
        
-        ksp_us , img_us ,  img_us_np , label , mask , maxi , fname = data
+        ksp_us , img_us ,  img_us_np , label , mask , sens_ori , maxi , fname = data
 
         # input_kspace = input_kspace.to(args.device)
         # inp_mag = mag_us.unsqueeze(1).to(args.device)
@@ -230,14 +230,14 @@ def visualize(args, epoch,  model, model_cla, data_loader,writer):
 
             img_list=[]
 
-            ksp_us , img_us ,  img_us_np , label , mask , maxi , fname = data
+            ksp_us , img_us ,  img_us_np , label , mask ,sens_ori ,  maxi , fname = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
             # inp_pha = pha_us.unsqueeze(1).to(args.device)
             # tgt_pha = pha_gt.unsqueeze(1).to(args.device)
             ksp_us = ksp_us.to(args.device)
-            # sens = sens.to(args.device)
+            sens_ori = sens_ori.to(args.device)
             mask = mask.to(args.device)
             # img_gt = img_gt.to(args.device)
             img_us = img_us.to(args.device)
@@ -266,8 +266,8 @@ def visualize(args, epoch,  model, model_cla, data_loader,writer):
             sens = sens.squeeze(0)
             sens_cmplx_abs = (torch.sqrt(sens[:,:,:,0]**2 + sens[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             
-            # sens_ori = sens_ori.squeeze(0)
-            # sens_cmplx_abs_ori = (torch.sqrt(sens_ori[:,:,:,0]**2 + sens_ori[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            sens_ori = sens_ori.squeeze(0)
+            sens_cmplx_abs_ori = (torch.sqrt(sens_ori[:,:,:,0]**2 + sens_ori[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             
             # print("sens_cmplx_abs",sens_cmplx_abs.shape)
             
@@ -423,17 +423,17 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss()
 
-    print("ROTATION as a pretext task VarNet with 32-channels data, using SSIM loss")
+    print("ROTATION as a PRETEXT task VarNet with 32-channels data")
 
     train_loader,  display_loader = create_data_loaders(args,args.data_path)  
     print("dataloaders for 32 channels data readdy")  
 
     scheduler_vs = torch.optim.lr_scheduler.StepLR(optimizer_vs, args.lr_step_size, args.lr_gamma)
 
-    print("Parameters in Model=",T.count_parameters(model)/1000,"K")
-    print("Parameters in classifier model=",T.count_parameters(model_cla)/1000,"K")
+    print("Parameters in Model=",T.count_parameters(model)/1000000,"M")
+    print("Parameters in classifier model=",T.count_parameters(model_cla)/1000000,"M")
 
-    print("Total parameters in VS-Model + classifier =",T.count_parameters(model)/1000+T.count_parameters(model_cla)/1000,"K")
+    print("Total parameters in VS-Model + classifier =",T.count_parameters(model)/1000000+T.count_parameters(model_cla)/1000000,"M")
 
 
     for epoch in range(start_epoch, args.num_epochs):
