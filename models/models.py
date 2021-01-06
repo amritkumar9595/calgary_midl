@@ -567,8 +567,8 @@ class network(nn.Module):
 
         op=[]        
         for i in range(self.cascades):
+
             x_cnn = self.conv_blocks[i](x)
-            # x_cnn = self.conv_blocks[i](x.unsqueeze(0)).squeeze(0)
             Sx, SS = self.dc_blocks[i].perform(x, k, m, c)
             x = self.wa_blocks[i].perform(x + x_cnn, Sx, SS)
             op.append(x)
@@ -600,11 +600,11 @@ class architecture(nn.Module):
 
     def __init__(self,dccoeff=0.1,wacoeff=0.1,cascade=5,sens_chans=8, sens_pools=4):
         super(architecture,self).__init__()
-        self.dccoeff = 0.1
-        self.wacoeff = 0.1
-        self.cascade = 5
-        self.sens_chans = 8
-        self.sens_pools = 4
+        self.dccoeff = dccoeff
+        self.wacoeff = wacoeff
+        self.cascade = cascade
+        self.sens_chans = sens_chans
+        self.sens_pools = sens_pools
 
         self.model_vs = network(self.dccoeff, self.wacoeff, self.cascade)
         self.model_sens = SensitivityModel(self.sens_chans, self.sens_pools)
