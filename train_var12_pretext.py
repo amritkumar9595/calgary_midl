@@ -1,6 +1,6 @@
 """
-Pre-training the Variatioanl Network with undersampled images only
-Focus is on learning the features , by learning the sensitivity maps
+Train VarNet from scratch with 12 channels data
+
 """
 
 import logging
@@ -13,13 +13,13 @@ import os
 import numpy as np
 import torch
 import torchvision
-# from tensorboardX import SummaryWriter
+from tensorboardX import SummaryWriter
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from common.args import Args
 from data import transforms as T
 from data.data_loader2 import SliceData , DataTransform
-from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel
+from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture
 from tqdm import tqdm
 
 
@@ -27,9 +27,9 @@ from tqdm import tqdm
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# wandb login
-import wandb
-wandb.init()
+# # wandb login
+# import wandb
+# wandb.init()
 
 
 def create_datasets(args,data_path):
@@ -51,22 +51,21 @@ def create_datasets(args,data_path):
 
 def create_data_loaders(args,data_path):
     dev_data, train_data = create_datasets(args,data_path)
-    # display_data = [dev_data[i] for i in range(0, len(dev_data))]
     display_data = [dev_data[i] for i in range(0, len(dev_data))]
  
     train_loader = DataLoader(
         dataset=train_data,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=4,
-        pin_memory=True,
+        num_workers=0,
+        pin_memory=False,
     )
 
     dev_loader = DataLoader(
         dataset=dev_data,
         batch_size=args.batch_size,
-        num_workers=4,
-        pin_memory=True,
+        num_workers=0,
+        pin_memory=False,
     )
     display_loader = DataLoader(
         dataset=display_data,
@@ -80,12 +79,12 @@ def create_data_loaders(args,data_path):
 
 
 ssim_loss = SSIM().cuda()
-def train_epoch(args, epoch,model_vs, model_sens, data_loader,optimizer_vs):
+def train_epoch(args, epoch,model, data_loader,optimizer, writer):
 
     # print("entering training....")
 
-    model_vs.train()
-    model_sens.train()
+    model.train()
+
 
     avg_loss_cmplx = 0.
     start_epoch = start_iter = time.perf_counter()
@@ -106,15 +105,17 @@ def train_epoch(args, epoch,model_vs, model_sens, data_loader,optimizer_vs):
         mask = mask.to(args.device)
         img_us = img_us.to(args.device)
         # img_gt = img_gt.to(args.device)
+        img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
         img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
 
         
-        sens = model_sens(ksp_us, mask)
-        img_us =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
+        # sens = model_sens(ksp_us, mask)
+        # img_us =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
         # print("img_us_train ",img_us.max())
         # print("fname",fname)
         # print("img_us,ksp_us,sens,img_gt_np",img_us.max(),ksp_us.max(),sens.max(),img_gt_np.max())
-        out,_ = model_vs(img_us,ksp_us,sens,mask)
+        # print("mask in train_var12=",mask.shape)
+        out,_,_ = model(img_us,ksp_us,mask)
         
         # print("out",out.shape)
         # loss_cmplx = F.mse_loss(out,img_gt_np.cuda())
@@ -129,17 +130,17 @@ def train_epoch(args, epoch,model_vs, model_sens, data_loader,optimizer_vs):
         
         
           
-        optimizer_vs.zero_grad()
+        optimizer.zero_grad()
 
         loss_cmplx.backward()
 
-        optimizer_vs.step()
+        optimizer.step()
 
         avg_loss_cmplx = 0.99 * avg_loss_cmplx + 0.01 * loss_cmplx.item() if iter > 0 else loss_cmplx.item()
 
-        # writer.add_scalar('TrainLoss_cmplx_ssim', loss_cmplx.item(), global_step + iter)
-        # writer.add_scalar('TrainLoss_cmplx_mse', loss_cmplx_mse.item(), global_step + iter)
-        wandb.log({"Train_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Train_Loss_cmplx_mse": loss_cmplx_mse.item()})
+        writer.add_scalar('TrainLoss_cmplx_ssim', loss_cmplx.item(), global_step + iter)
+        writer.add_scalar('TrainLoss_cmplx_mse', loss_cmplx_mse.item(), global_step + iter)
+        # wandb.log({"Train_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Train_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
         if iter % args.report_interval == 0:
             logging.info(
@@ -155,10 +156,10 @@ def train_epoch(args, epoch,model_vs, model_sens, data_loader,optimizer_vs):
     return avg_loss_cmplx,  time.perf_counter() - start_epoch
 
 
-def evaluate(args, epoch,  model_vs ,model_sens,  data_loader):
+def evaluate(args, epoch,  model ,   data_loader, writer):
 
-    model_vs.eval()
-    model_sens.eval()
+    model.eval()
+
 
     losses_cmplx = []
     start = time.perf_counter()
@@ -177,11 +178,12 @@ def evaluate(args, epoch,  model_vs ,model_sens,  data_loader):
             mask = mask.to(args.device)
             # img_gt = img_gt.to(args.device)
             img_us = img_us.to(args.device)
+            img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
             img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
             
-            sens = model_sens(ksp_us, mask)
-            img_us =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
-            out,_ = model_vs(img_us,ksp_us,sens,mask)
+            # sens = model_sens(ksp_us, mask)
+            # img_us =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
+            out,_,_ = model(img_us,ksp_us,mask)
 
         
         if(args.loss == 'SSIM'):
@@ -194,28 +196,27 @@ def evaluate(args, epoch,  model_vs ,model_sens,  data_loader):
             
         losses_cmplx.append(loss_cmplx.item())
 
-        wandb.log({"Dev_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Dev_Loss_cmplx_mse": loss_cmplx_mse.item()})
+        # wandb.log({"Dev_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Dev_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
-        # writer.add_scalar('Dev_Loss_cmplx_ssim',loss_cmplx_ssim, epoch)
-        # writer.add_scalar('Dev_Loss_cmplx_mse',loss_cmplx_mse, epoch)
+        writer.add_scalar('Dev_Loss_cmplx_ssim',loss_cmplx_ssim, epoch)
+        writer.add_scalar('Dev_Loss_cmplx_mse',loss_cmplx_mse, epoch)
         
     return  np.mean(losses_cmplx) , time.perf_counter() - start
 
 
 
-def visualize(args, epoch,  model_vs, model_sens, data_loader):
-    def norm_image(image):
+def visualize(args, epoch,  model, data_loader, writer):
+    def save_image(image,tag):
         image -= image.min()
         image /= image.max()
-        image = image[0,0,:,:].cpu().numpy()
-        # grid = torchvision.utils.make_grid(image, nrow=4, pad_value=1)
-        # writer.add_image(tag, grid, epoch)
+        # image = image[0,0,:,:].cpu().numpy()
+        grid = torchvision.utils.make_grid(image, nrow=4, pad_value=1)
+        writer.add_image(tag, grid, epoch)
         # print("image",image.shape)
-        return image
+        # return image
 
 
-    model_vs.eval()
-    model_sens.eval()
+    model.eval()
     
     with torch.no_grad():
 
@@ -238,10 +239,10 @@ def visualize(args, epoch,  model_vs, model_sens, data_loader):
             img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
             img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
             
-            sens = model_sens(ksp_us, mask)
+            out,out_stack,sens= model(img_us,ksp_us,mask)
             # print("sens",sens.shape)
-            img_us_sens =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
-            out,out_stack = model_vs(img_us_sens,ksp_us,sens,mask)
+            # img_us_sens =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
+            # out,out_stack = model_vs(img_us_sens,ksp_us,sens,mask)
             # print("img_us",img_us.shape)
 
             # print("shape",out_stack[0].shape,out_stack[1].shape,out_stack[1].shape)
@@ -270,16 +271,17 @@ def visualize(args, epoch,  model_vs, model_sens, data_loader):
             # sens_cmplx_abs  = (img_gt_cmplx_abs[0,0,:,:]).unsqueeze(0).unsqueeze(1).to(args.device) 
 
             
-            # save_image(error_cmplx,'Error')
-            # out = save_image(out, 'Recons')
+            save_image(error_cmplx,'Error')
+            out = save_image(out, 'Recons')
             # print("img_us",img_us_np.shape)
-            wandb.log({"pre-text task for VarNet-12": [wandb.Image(norm_image(img_us_np.unsqueeze(0)), caption="US-Image"), wandb.Image(norm_image(out), caption="Reconstruction"),
-            wandb.Image(norm_image(img_gt_np.unsqueeze(0)), caption="GT-Image"),wandb.Image(norm_image(error_cmplx), caption="Error")]})
-            # save_image(img_gt_np,'Target')
+            # wandb.log({"img": [wandb.Image(norm_image(img_us_np.unsqueeze(0)), caption="US-Image"), wandb.Image(norm_image(out), caption="Reconstruction"),
+            # wandb.Image(norm_image(img_gt_np.unsqueeze(0)), caption="GT-Image"),wandb.Image(norm_image(error_cmplx), caption="Error")]})
+            save_image(img_us_np,'Target')
+            save_image(img_gt_np,'GT')
             
-            # save_image(img_us_cmplx_abs,'US-image')
-            # save_image(sens_cmplx_abs,'sens')
-            # save_image(sens_cmplx_abs_ori,'sens_map_from_enlive')
+            save_image(img_us_cmplx_abs,'US-image')
+            save_image(sens_cmplx_abs,'sens')
+            save_image(sens_cmplx_abs_ori,'sens_map_from_enlive')
 
 
             # wb_save_image(img_us_cmplx_abs,out,img_gt_np,error_cmplx)
@@ -288,52 +290,51 @@ def visualize(args, epoch,  model_vs, model_sens, data_loader):
 
             
             
-            # out_cmplx=out_stack[0]
-            # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            out_cmplx=out_stack[0]
+            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            # save_image(out_cmplx_abs, 'Recons0')
+            save_image(out_cmplx_abs, 'Recons0')
             
-            # out_cmplx=out_stack[1]
-            # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            out_cmplx=out_stack[1]
+            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            # save_image(out_cmplx_abs, 'Recons1')
+            save_image(out_cmplx_abs, 'Recons1')
             
-            # out_cmplx=out_stack[2]
-            # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            out_cmplx=out_stack[2]
+            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            # save_image(out_cmplx_abs, 'Recons2')
+            save_image(out_cmplx_abs, 'Recons2')
             
-            # out_cmplx=out_stack[3]
-            # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            out_cmplx=out_stack[3]
+            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            # save_image(out_cmplx_abs, 'Recons3')
+            save_image(out_cmplx_abs, 'Recons3')
             
-            # out_cmplx=out_stack[4]
-            # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            out_cmplx=out_stack[4]
+            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            # save_image(out_cmplx_abs, 'Recons4')
+            save_image(out_cmplx_abs, 'Recons4')
             
 
             break
 
 
 
-def save_model(args, exp_dir, epoch, model_vs,model_sens, optimizer_vs,best_dev_loss_cmplx,is_new_best_cmplx):
+def save_model(args, exp_dir, epoch, model, optimizer,best_dev_loss_cmplx,is_new_best_cmplx):
 
     torch.save(
         {
             'epoch': epoch,
             'args': args,
-            'model_vs':model_vs.state_dict(),
-            'model_sens':model_sens.state_dict(),
-            'optimizer_vs': optimizer_vs.state_dict(), 
+            'model':model.state_dict(),
+            'optimizer': optimizer.state_dict(), 
             'best_dev_loss_cmplx': best_dev_loss_cmplx,
             'exp_dir': exp_dir
         },
-        f=exp_dir / 'vs_model.pt'
+        f=exp_dir / 'model.pt'
     )
     if is_new_best_cmplx:   
-        shutil.copyfile(exp_dir / 'vs_model.pt', exp_dir / 'best_vs_model.pt')
+        shutil.copyfile(exp_dir / 'model.pt', exp_dir / 'best_model.pt')
 
 
 
@@ -341,15 +342,14 @@ def build_model(args):
     
     wacoeff = 0.1
     dccoeff = 0.1
-    cascade = 5
-    
-    model_vs = network(dccoeff, wacoeff, cascade, args.dropout).to(args.device)
-     
+    cascade = 5   
     sens_chans = 8
     sens_pools = 4
-    model_sens = SensitivityModel(sens_chans, sens_pools).to(args.device)
-    return  model_vs , model_sens
-    print
+
+    model = architecture(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
+
+
+    return  model  
 
 def load_model(checkpoint_file):
 
@@ -362,13 +362,13 @@ def load_model(checkpoint_file):
 
     model_vs.load_state_dict(checkpoint['model_vs'])
 
-    optimizer_vs = build_optim(args, model_vs.parameters())
+    optimizer = build_optim(args, model_vs.parameters())
 
-    optimizer_vs.load_state_dict(checkpoint['optimizer_vs'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
     
     
     
-    return checkpoint,  model_vs ,   optimizer_vs
+    return checkpoint,  model_vs ,   optimizer
 
 
 def build_optim(params,lr,weight_decay):
@@ -379,11 +379,11 @@ def build_optim(params,lr,weight_decay):
 
 def main(args):
     args.exp_dir.mkdir(parents=True, exist_ok=True)
-    # writer = SummaryWriter(log_dir=args.exp_dir / 'vs_summary')
+    writer = SummaryWriter(log_dir=args.exp_dir / 'vs_summary')
 
     if args.resume == 'True':
 
-        checkpoint, model_vs,optimizer_vs = load_model(args.checkpoint)
+        checkpoint, model_vs,optimizer = load_model(args.checkpoint)
         args = checkpoint['args']
         best_dev_loss_cmplx = checkpoint['best_dev_loss_cmplx']
         start_epoch = checkpoint['epoch']
@@ -391,9 +391,9 @@ def main(args):
         del checkpoint
     else:
         
-        model_vs , model_sens = build_model(args)
-        wandb.watch(model_vs)
-        wandb.watch(model_sens)
+        model  = build_model(args)
+        # wandb.watch(model_vs)
+        # wandb.watch(model_sens)
 
 
 
@@ -403,38 +403,34 @@ def main(args):
             model_sens = torch.nn.DataParallel(model_sens)
 
 
-        optimizer_vs = build_optim(list(model_vs.parameters()) + list(model_sens.parameters()),args.lr,args.weight_decay)
+        optimizer = build_optim((model.parameters()),args.lr,args.weight_decay)
 
         best_dev_loss_cmplx = 1e9
         start_epoch = 0
         
     logging.info(args)
 
-    logging.info(model_vs)
-    logging.info(model_sens)
+    logging.info(model)
 
     
-    print("training VarNet with 12-channels data, using SSIM loss")
+    print("PRETEXT Training of VarNet from  with 12-channels data, using",args.loss,"  taking US image as GT")
 
     train_loader, dev_loader , display_loader = create_data_loaders(args,args.data_path)  
     print("dataloaders for 12 channels data readdy")  
 
-    scheduler_vs = torch.optim.lr_scheduler.StepLR(optimizer_vs, args.lr_step_size, args.lr_gamma)
+    scheduler_vs = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_step_size, args.lr_gamma)
 
-    print("Parameters in VS-Model=",T.count_parameters(model_vs)/1000,"K")
-    print("Parameters in VS-Sens=",T.count_parameters(model_sens)/1000,"K")
+    print("Parameters in Model=",T.count_parameters(model)/1000,"K")
 
-    print("Total parameters in VS-Model + VS-Sens =",T.count_parameters(model_vs)/1000+T.count_parameters(model_sens)/1000,"K")
-
-
+    
     for epoch in range(start_epoch, args.num_epochs):
 
 
 
 
-        train_loss_cmplx, train_time = train_epoch(args, epoch,  model_vs , model_sens ,  train_loader, optimizer_vs)
-        dev_loss_cmplx , dev_time = evaluate(args, epoch, model_vs , model_sens,  dev_loader)
-        visualize(args, epoch, model_vs , model_sens,  display_loader)
+        train_loss_cmplx, train_time = train_epoch(args, epoch,  model ,  train_loader, optimizer, writer)
+        dev_loss_cmplx , dev_time = evaluate(args, epoch, model ,  dev_loader, writer)
+        visualize(args, epoch, model ,  display_loader, writer)
 
         scheduler_vs.step(epoch)
         
@@ -442,15 +438,15 @@ def main(args):
 
         best_dev_loss_cmplx = min(best_dev_loss_cmplx, dev_loss_cmplx)
                 
-        save_model(args, args.exp_dir, epoch, model_vs, model_sens, optimizer_vs, best_dev_loss_cmplx ,is_new_best_cmplx)
+        save_model(args, args.exp_dir, epoch, model, optimizer, best_dev_loss_cmplx ,is_new_best_cmplx)
         logging.info(
             f'Epoch = [{epoch:4d}/{args.num_epochs:4d}]  TrainLoss_cmplx = {train_loss_cmplx:.4g}  '
             f'DevLoss_cmplx = {dev_loss_cmplx:.4g} TrainTime = {train_time:.4f}s DevTime = {dev_time:.4f}s',
         )
-        torch.save(model_vs.state_dict(), os.path.join(wandb.run.dir, 'model_vs.pt'))
-        torch.save(model_sens.state_dict(), os.path.join(wandb.run.dir, 'model_sens.pt'))
-    # writer.close()
-    wandb.finish()
+        # torch.save(model_vs.state_dict(), os.path.join(wandb.run.dir, 'model_vs.pt'))
+        # torch.save(model_sens.state_dict(), os.path.join(wandb.run.dir, 'model_sens.pt'))
+    writer.close()
+    # wandb.finish()
 
 
 def create_arg_parser():

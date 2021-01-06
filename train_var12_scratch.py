@@ -327,10 +327,10 @@ def save_model(args, exp_dir, epoch, model, optimizer,best_dev_loss_cmplx,is_new
             'best_dev_loss_cmplx': best_dev_loss_cmplx,
             'exp_dir': exp_dir
         },
-        f=exp_dir / 'vs_model.pt'
+        f=exp_dir / 'model.pt'
     )
     if is_new_best_cmplx:   
-        shutil.copyfile(exp_dir / 'vs_model.pt', exp_dir / 'best_vs_model.pt')
+        shutil.copyfile(exp_dir / 'model.pt', exp_dir / 'best_model.pt')
 
 
 
