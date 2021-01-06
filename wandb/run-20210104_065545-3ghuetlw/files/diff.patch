@@ -1,0 +1,86 @@
+diff --git a/train_var12.py b/train_var12.py
+index 9baf629..6b9adb4 100644
+--- a/train_var12.py
++++ b/train_var12.py
+@@ -346,7 +346,7 @@ def build_model(args):
+     
+     model_vs = network(dccoeff, wacoeff, cascade, args.dropout).to(args.device)
+      
+-    sens_chans = 32
++    sens_chans = 8
+     sens_pools = 4
+     model_sens = SensitivityModel(sens_chans, sens_pools).to(args.device)
+     return  model_vs , model_sens
+diff --git a/train_var12.sh b/train_var12.sh
+index 2f2eeeb..cbe5b74 100644
+--- a/train_var12.sh
++++ b/train_var12.sh
+@@ -3,10 +3,11 @@ NUM_EPOCHS=150
+ DEVICE='cuda:0'
+ RESUME='False'
+            
+-SAMPLE_RATE=0.1
++SAMPLE_RATE=1.0
+ 
+                                             ## 12 channel data ##
+-#<<ACC_FACTOR_5x
++
++<<ACC_FACTOR_5x
+ LOSS='SSIM'
+ DROPOUT=0.0
+ DATA_PATH="/home/ubuntu/volume1/MIDL-challenge/Data2" 
+@@ -16,12 +17,27 @@ EXP_DIR='/home/ubuntu/volume1/MIDL-challenge/Amrit/experiments/varnet/acc_'${ACC
+ CHECKPOINT='/home/ubuntu/volume1/MIDL-challenge/Amrit/experiments/varnet/acc_5x/12-channels/'${LOSS}'_loss/vs_model.pt'
+ 
+ python train_var12.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT} --dropout ${DROPOUT} --loss ${LOSS}
++ACC_FACTOR_5x
++
++#<<ACC_FACTOR_5x
++LOSS='SSIM'
++DROPOUT=0.0
++DATA_PATH="/home/ubuntu/volume1/MIDL-challenge/Data2" 
++ACC_FACTOR=5
++ACC='5x'
++EXP_DIR='/home/ubuntu/volume1/MIDL-challenge/Amrit/experiments/varnet/acc_'${ACC}'/12-channels/pretext/'${LOSS}'_loss'
++CHECKPOINT='/home/ubuntu/volume1/MIDL-challenge/Amrit/experiments/varnet/acc_5x/12-channels/pretext/'${LOSS}'_loss/vs_model.pt'
++
++python train_var12_pretext.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT} --dropout ${DROPOUT} --loss ${LOSS}
+ #ACC_FACTOR_5x
+ 
+ 
+ 
+ 
+ 
++
++
++
+ <<ACC_FACTOR_10x
+ DATA_PATH="/media/student1/RemovableVolume/calgary/"
+ ACC_FACTOR=10
+diff --git a/wandb/debug-internal.log b/wandb/debug-internal.log
+index 450fa57..29279fc 120000
+--- a/wandb/debug-internal.log
++++ b/wandb/debug-internal.log
+@@ -1 +1 @@
+-run-20210102_170401-30cchx84/logs/debug-internal.log
+\ No newline at end of file
++run-20210104_065545-3ghuetlw/logs/debug-internal.log
+\ No newline at end of file
+diff --git a/wandb/debug.log b/wandb/debug.log
+index a9dec11..f2433de 120000
+--- a/wandb/debug.log
++++ b/wandb/debug.log
+@@ -1 +1 @@
+-run-20210102_170401-30cchx84/logs/debug.log
+\ No newline at end of file
++run-20210104_065545-3ghuetlw/logs/debug.log
+\ No newline at end of file
+diff --git a/wandb/latest-run b/wandb/latest-run
+index a2ab09a..07425b4 120000
+--- a/wandb/latest-run
++++ b/wandb/latest-run
+@@ -1 +1 @@
+-run-20210102_170401-30cchx84
+\ No newline at end of file
++run-20210104_065545-3ghuetlw
+\ No newline at end of file
