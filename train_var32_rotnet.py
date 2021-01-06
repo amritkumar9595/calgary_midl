@@ -287,7 +287,7 @@ def visualize(args, epoch,  model, model_cla, data_loader,writer):
             
             save_image(img_us_cmplx_abs,'US-image')
             save_image(sens_cmplx_abs,'sens')
-            # save_image(sens_cmplx_abs_ori,'sens_map_from_enlive')
+            save_image(sens_cmplx_abs_ori,'sens_map_from_enlive')
 
 
             # wb_save_image(img_us_cmplx_abs,out,img_gt_np,error_cmplx)
@@ -493,10 +493,8 @@ def create_arg_parser():
     
     parser.add_argument('--checkpoint', type=str,help='Path to an existing checkpoint. Used along with "--resume"')
 
-    parser.add_argument('--loss', type=str, default='SSIM')
-    parser.add_argument('--residual', type=str, default='False')
     parser.add_argument('--acceleration', type=int,help='Ratio of k-space columns to be sampled. 5x or 10x masks provided')
-    parser.add_argument('--dropout', type=float,help='% of nodes in decoder to be dropped')
+
     
     return parser
 
