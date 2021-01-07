@@ -92,7 +92,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
     
     for iter, data in enumerate(tqdm(data_loader)):
        
-        ksp_us,_ ,img_us,img_gt,img_us_np,img_gt_np,sens,mask,_,maxi,fname = data
+        ksp_us,img_us,img_us_np,img_gt_np,_,mask,maxi,fname = data
 
         # input_kspace = input_kspace.to(args.device)
         # inp_mag = mag_us.unsqueeze(1).to(args.device)
@@ -167,7 +167,7 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
 
         for iter, data in enumerate(tqdm(data_loader)):
             
-            ksp_us,_ ,img_us,img_gt,img_us_np,img_gt_np,sens,mask,_,_,_ = data
+            ksp_us,img_us,img_us_np,img_gt_np,_,mask,maxi,fname = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -225,7 +225,7 @@ def visualize(args, epoch,  model, data_loader, writer):
 
             img_list=[]
 
-            ksp_us,_ ,img_us,img_gt,img_us_np,img_gt_np,sens,mask,_,_,_ = data
+            ksp_us ,img_us,img_us_np,img_gt_np , sens,mask,_,_ = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)

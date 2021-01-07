@@ -165,7 +165,7 @@ class DataTransform:
 
         
         # return   ksp_us/img_us_sens.max(), ksp_t/img_us_sens.max() ,  img_us_sens/img_us_sens.max(), img_gt_sens/img_us_sens.max() , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() , sens_t , mask ,img_us_sens.max(),img_us_np.max(),fname
-        return   ksp_us/img_us_np.max() ,  img_us/img_us_np.max()  , img_gt_np/img_us_np.max() ,sens_t, mask ,img_us_np.max(),fname
+        return   ksp_us/img_us_np.max() ,  img_us/img_us_np.max()  , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() ,sens_t, mask ,img_us_np.max(),fname
         # return   ksp_us, ksp_t ,  img_us, img_gt , img_us_np , img_gt_np , sens_t , mask ,img_us.max(),img_us_np.max(),fname
 
 
