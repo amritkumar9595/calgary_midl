@@ -27,10 +27,6 @@ from tqdm import tqdm
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# # wandb login
-# import wandb
-# wandb.init()
-
 
 def create_datasets(args,data_path):
 
@@ -51,7 +47,7 @@ def create_datasets(args,data_path):
 
 def create_data_loaders(args,data_path):
     dev_data, train_data = create_datasets(args,data_path)
-    display_data = [dev_data[i] for i in range(0, len(dev_data))]
+    display_data = [dev_data[i] for i in range(0, len(dev_data) // 16)]
  
     train_loader = DataLoader(
         dataset=train_data,
@@ -369,7 +365,7 @@ def main(args):
         del checkpoint
     else:
         
-        model  = build_model(args)
+        # model  = build_model(args)
         _, model,_ = load_model(args.pretext_model)
         # wandb.watch(model)
         # wandb.watch(model_sens)

@@ -40,40 +40,45 @@ def create_datasets(args,data_path):
         sample_rate=args.sample_rate,
         acceleration=args.acceleration
     )
+
     dev_data = SliceData(
         root=str(data_path) + '/Val',
         transform=DataTransform(),
         sample_rate=args.sample_rate,
         acceleration=args.acceleration
     )
-    return dev_data, train_data
+    return train_data, dev_data
 
 
 def create_data_loaders(args,data_path):
-    dev_data, train_data = create_datasets(args,data_path)
-    display_data = [dev_data[i] for i in range(0, len(dev_data))]
- 
+    train_data, dev_data = create_datasets(args,data_path)
+    display_data = [dev_data[i] for i in range(0, len(dev_data) // 16)]
+    
+
     train_loader = DataLoader(
         dataset=train_data,
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=0,
-        pin_memory=False,
+        pin_memory=True,
     )
+
 
     dev_loader = DataLoader(
         dataset=dev_data,
         batch_size=args.batch_size,
         num_workers=0,
-        pin_memory=False,
+        pin_memory=True,
     )
+
     display_loader = DataLoader(
         dataset=display_data,
         batch_size=1,
         shuffle = True,
         num_workers=0,
-        pin_memory=False,
+        pin_memory=True,
     )
+
     
     return train_loader, dev_loader , display_loader
 
@@ -92,7 +97,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
     
     for iter, data in enumerate(tqdm(data_loader)):
        
-        ksp_us,_ ,img_us,img_gt,img_us_np,img_gt_np,sens,mask,_,maxi,fname = data
+        ksp_us,img_us,img_gt_np,_,mask,maxi,fname = data
 
         # input_kspace = input_kspace.to(args.device)
         # inp_mag = mag_us.unsqueeze(1).to(args.device)
@@ -166,7 +171,7 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
 
         for iter, data in enumerate(tqdm(data_loader)):
             
-            ksp_us,_ ,img_us,img_gt,img_us_np,img_gt_np,sens,mask,_,_,_ = data
+            ksp_us ,img_us,img_gt_np,_ ,mask,_,_ = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -223,7 +228,7 @@ def visualize(args, epoch,  model, data_loader, writer):
 
             img_list=[]
 
-            ksp_us,_ ,img_us,img_gt,img_us_np,img_gt_np,sens,mask,_,_,_ = data
+            ksp_us ,img_us,img_gt_np , sens,mask,_,_ = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -387,7 +392,7 @@ def main(args):
         del checkpoint
     else:
         
-        model  = build_model(args)
+        model  = build_model(args).to(args.device)
         # wandb.watch(model_vs)
         # wandb.watch(model_sens)
 

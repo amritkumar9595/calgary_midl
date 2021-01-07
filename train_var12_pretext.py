@@ -51,7 +51,7 @@ def create_datasets(args,data_path):
 
 def create_data_loaders(args,data_path):
     dev_data, train_data = create_datasets(args,data_path)
-    display_data = [dev_data[i] for i in range(0, len(dev_data))]
+    display_data = [dev_data[i] for i in range(0, len(dev_data) // 16)]
  
     train_loader = DataLoader(
         dataset=train_data,
@@ -420,7 +420,7 @@ def main(args):
 
     scheduler_vs = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_step_size, args.lr_gamma)
 
-    print("Parameters in Model=",T.count_parameters(model)/1000,"K")
+    print("Parameters in Model=",T.count_parameters(model)/1000000,"M")
 
     
     for epoch in range(start_epoch, args.num_epochs):

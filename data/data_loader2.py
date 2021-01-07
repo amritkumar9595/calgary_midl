@@ -94,12 +94,14 @@ class DataTransform:
     
     
     ## start from here    
+        
+
         sens_t = T.to_tensor(sensitivity)
         ksp_t = T.to_tensor(ksp_cmplx)
         ksp_t = ksp_t.permute(2,0,1,3)
         img_gt = T.ifft2(ksp_t)
         # print("img_gt,sens_t",img_gt.shape,sens_t.shape)
-        img_gt_sens = T.combine_all_coils(img_gt , sens_t)
+        # img_gt_sens = T.combine_all_coils(img_gt , sens_t)
         
         # img_gt_np = T.zero_filled_reconstruction(ksp_cmplx)
         img_gt_np = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_t)))
@@ -163,7 +165,7 @@ class DataTransform:
 
         
         # return   ksp_us/img_us_sens.max(), ksp_t/img_us_sens.max() ,  img_us_sens/img_us_sens.max(), img_gt_sens/img_us_sens.max() , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() , sens_t , mask ,img_us_sens.max(),img_us_np.max(),fname
-        return   ksp_us/img_us_np.max(), ksp_t/img_us_np.max() ,  img_us/img_us_np.max(), img_gt/img_us_np.max() , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() , sens_t , mask ,img_us.max(),img_us_np.max(),fname
+        return   ksp_us/img_us_np.max() ,  img_us/img_us_np.max()  , img_gt_np/img_us_np.max() ,sens_t, mask ,img_us_np.max(),fname
         # return   ksp_us, ksp_t ,  img_us, img_gt , img_us_np , img_gt_np , sens_t , mask ,img_us.max(),img_us_np.max(),fname
 
 
