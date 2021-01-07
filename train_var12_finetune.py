@@ -8,7 +8,7 @@ import pathlib
 import random
 import shutil
 import time
-import wandb
+# import wandb
 import os 
 import numpy as np
 import torch
@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader
 from common.args import Args
 from data import transforms as T
 from data.data_loader2 import SliceData , DataTransform
-from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture
+from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture, change_init
 from tqdm import tqdm
 
 
@@ -88,7 +88,8 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
     
     for iter, data in enumerate(tqdm(data_loader)):
        
-        ksp_us,_ ,img_us,img_gt,img_us_np,img_gt_np,sens,mask,_,maxi,fname = data
+        ksp_us,img_us,img_us_np,img_gt_np,_,mask,maxi,fname = data
+
 
         # input_kspace = input_kspace.to(args.device)
         # inp_mag = mag_us.unsqueeze(1).to(args.device)
@@ -163,7 +164,8 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
 
         for iter, data in enumerate(tqdm(data_loader)):
             
-            ksp_us,_ ,img_us,img_gt,img_us_np,img_gt_np,sens,mask,_,_,_ = data
+            ksp_us,img_us,img_us_np,img_gt_np,_,mask,maxi,fname = data
+
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -221,7 +223,7 @@ def visualize(args, epoch,  model, data_loader, writer):
 
             img_list=[]
 
-            ksp_us,_ ,img_us,img_gt,img_us_np,img_gt_np,sens,mask,_,_,_ = data
+            ksp_us ,img_us,img_us_np,img_gt_np , sens,mask,_,_ = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -320,29 +322,32 @@ def build_model(args):
     sens_chans = 8
     sens_pools = 4
 
-    model = architecture(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
+    model = architecture(dccoeff, wacoeff, cascade,sens_chans, sens_pools)
 
 
     return  model  
 
-def load_model(checkpoint_file):
+def load_model(checkpoint_file,layer_init = 0):
 
     checkpoint = torch.load(checkpoint_file)
     args = checkpoint['args']
-    model = build_model(args)
+    model_ori = build_model(args)
     if args.data_parallel:
 
         model = torch.nn.DataParallel(model)
 
-    model.load_state_dict(checkpoint['model'])
+    model_ori.load_state_dict(checkpoint['model'])
 
-    optimizer = build_optim((model.parameters()),args.lr,args.weight_decay)
+    optimizer = build_optim((model_ori.parameters()),args.lr,args.weight_decay)
 
     optimizer.load_state_dict(checkpoint['optimizer'])
     
+    model_rand = build_model(args)
+
+    model_ori = change_init(model_ori,model_rand , layer_init).to(args.device)
     
     
-    return checkpoint,  model ,   optimizer
+    return checkpoint,  model_ori ,   optimizer
 
 
 def build_optim(params,lr,weight_decay):
@@ -357,7 +362,7 @@ def main(args):
 
     if args.resume == 'True':
 
-        checkpoint, model,optimizer = load_model(args.checkpoint)
+        checkpoint, model,optimizer = load_model(args.checkpoint, layer_init = 0)
         args = checkpoint['args']
         best_dev_loss_cmplx = checkpoint['best_dev_loss_cmplx']
         start_epoch = checkpoint['epoch']
@@ -366,7 +371,7 @@ def main(args):
     else:
         
         # model  = build_model(args)
-        _, model,_ = load_model(args.pretext_model)
+        _, model,_ = load_model(args.pretext_model , layer_init = args.layer_init)
         # wandb.watch(model)
         # wandb.watch(model_sens)
 
@@ -460,7 +465,8 @@ def create_arg_parser():
     parser.add_argument('--residual', type=str, default='False')
     parser.add_argument('--acceleration', type=int,help='Ratio of k-space columns to be sampled. 5x or 10x masks provided')
     parser.add_argument('--dropout', type=float,help='% of nodes in decoder to be dropped')
-    
+    parser.add_argument('--layer-init', type=int,help='number of layers to be initialized with random from back')
+
     return parser
 
 

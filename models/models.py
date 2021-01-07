@@ -619,6 +619,23 @@ class architecture(nn.Module):
         return out, outstack, sens
 
 
+def change_init(model_ori,model_rand,layers = 0):
+
+    '''
+    Use this function to randomly initialize a selected number of layers from the decoder part
+
+    '''
+    for i in range(-layers,0):
+        print("i=",i)
+        model_ori.model_vs.conv_blocks[i] = model_rand.model_vs.conv_blocks[i]
+    
+    return model_ori
+
+
+
+
+
+
     
     
 '''    
