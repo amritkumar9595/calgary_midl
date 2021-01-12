@@ -57,8 +57,8 @@ def create_data_loaders(args,data_path):
         dataset=train_data,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=0,
-        pin_memory=False,
+        num_workers=4,
+        pin_memory=True,
     )
 
     dev_loader = DataLoader(
@@ -355,20 +355,20 @@ def load_model(checkpoint_file):
 
     checkpoint = torch.load(checkpoint_file)
     args = checkpoint['args']
-    model_vs = build_model(args)
+    model = build_model(args)
     if args.data_parallel:
 
-        model_vs = torch.nn.DataParallel(model_vs)
+        model = torch.nn.DataParallel(model)
 
-    model_vs.load_state_dict(checkpoint['model_vs'])
+    model.load_state_dict(checkpoint['model'])
 
-    optimizer = build_optim(args, model_vs.parameters())
+    optimizer = build_optim(model.parameters(),args.lr,args.weight_decay)
 
     optimizer.load_state_dict(checkpoint['optimizer'])
     
     
     
-    return checkpoint,  model_vs ,   optimizer
+    return checkpoint,  model ,   optimizer
 
 
 def build_optim(params,lr,weight_decay):
@@ -379,11 +379,13 @@ def build_optim(params,lr,weight_decay):
 
 def main(args):
     args.exp_dir.mkdir(parents=True, exist_ok=True)
-    writer = SummaryWriter(log_dir=args.exp_dir / 'vs_summary')
+    writer = SummaryWriter(log_dir=args.exp_dir / 'summary')
 
     if args.resume == 'True':
+        
+        print("resuming training of model loaded from:",args.checkpoint)
 
-        checkpoint, model_vs,optimizer = load_model(args.checkpoint)
+        checkpoint, model,optimizer = load_model(args.checkpoint)
         args = checkpoint['args']
         best_dev_loss_cmplx = checkpoint['best_dev_loss_cmplx']
         start_epoch = checkpoint['epoch']
@@ -399,8 +401,8 @@ def main(args):
 
         if args.data_parallel:
 
-            model_vs = torch.nn.DataParallel(model_vs)
-            model_sens = torch.nn.DataParallel(model_sens)
+            model = torch.nn.DataParallel(model)
+
 
 
         optimizer = build_optim((model.parameters()),args.lr,args.weight_decay)
@@ -408,9 +410,9 @@ def main(args):
         best_dev_loss_cmplx = 1e9
         start_epoch = 0
         
-    logging.info(args)
+    # logging.info(args)
 
-    logging.info(model)
+    # logging.info(model)
 
     
     print("PRETEXT Training of VarNet from  with 12-channels data, using",args.loss,"  taking US image as GT")
@@ -419,6 +421,8 @@ def main(args):
     print("dataloaders for 12 channels data readdy")  
 
     scheduler_vs = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_step_size, args.lr_gamma)
+
+    
 
     print("Parameters in Model=",T.count_parameters(model)/1000000,"M")
 

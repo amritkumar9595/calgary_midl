@@ -97,7 +97,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
     
     for iter, data in enumerate(tqdm(data_loader)):
        
-        ksp_us,img_us,img_gt_np,_,mask,maxi,fname = data
+        ksp_us,img_us,img_us_np,img_gt_np,_,mask,maxi,fname = data
 
         # input_kspace = input_kspace.to(args.device)
         # inp_mag = mag_us.unsqueeze(1).to(args.device)
@@ -171,7 +171,7 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
 
         for iter, data in enumerate(tqdm(data_loader)):
             
-            ksp_us ,img_us,img_gt_np,_ ,mask,_,_ = data
+            ksp_us,img_us,img_us_np,img_gt_np,_,mask,maxi,fname = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -228,7 +228,7 @@ def visualize(args, epoch,  model, data_loader, writer):
 
             img_list=[]
 
-            ksp_us ,img_us,img_gt_np , sens,mask,_,_ = data
+            ksp_us,img_us,img_us_np,img_gt_np,sens,mask,maxi,fname = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -356,20 +356,20 @@ def load_model(checkpoint_file):
 
     checkpoint = torch.load(checkpoint_file)
     args = checkpoint['args']
-    model_vs = build_model(args)
+    model = build_model(args)
     if args.data_parallel:
 
-        model_vs = torch.nn.DataParallel(model_vs)
+        model = torch.nn.DataParallel(model)
 
-    model_vs.load_state_dict(checkpoint['model_vs'])
+    model.load_state_dict(checkpoint['model'])
 
-    optimizer = build_optim(args, model_vs.parameters())
+    optimizer = build_optim(model.parameters(),args.lr,args.weight_decay)
 
     optimizer.load_state_dict(checkpoint['optimizer'])
     
     
     
-    return checkpoint,  model_vs ,   optimizer
+    return checkpoint,  model ,   optimizer
 
 
 def build_optim(params,lr,weight_decay):
@@ -384,7 +384,7 @@ def main(args):
 
     if args.resume == 'True':
 
-        checkpoint, model_vs,optimizer = load_model(args.checkpoint)
+        checkpoint, model,optimizer = load_model(args.checkpoint)
         args = checkpoint['args']
         best_dev_loss_cmplx = checkpoint['best_dev_loss_cmplx']
         start_epoch = checkpoint['epoch']
@@ -396,16 +396,10 @@ def main(args):
         # wandb.watch(model_vs)
         # wandb.watch(model_sens)
 
-
-
         if args.data_parallel:
+            model = torch.nn.DataParallel(model)
 
-            model_vs = torch.nn.DataParallel(model_vs)
-            model_sens = torch.nn.DataParallel(model_sens)
-
-
-        optimizer = build_optim((model.parameters()),args.lr,args.weight_decay)
-
+        optimizer = build_optim(model.parameters(),args.lr,args.weight_decay)
         best_dev_loss_cmplx = 1e9
         start_epoch = 0
         
@@ -423,7 +417,7 @@ def main(args):
 
     print("Parameters in Model=",T.count_parameters(model)/1000,"K")
 
-    
+
     for epoch in range(start_epoch, args.num_epochs):
 
 
