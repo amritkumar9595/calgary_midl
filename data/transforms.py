@@ -79,6 +79,22 @@ def fft2(data):
     # data = fftshift(data, dim=(-3, -2))
     return data
 
+def fft2_np(img_t):
+
+    """
+    img_ch has shape = [ch,218,180,2] in torch tensor format
+    Computes the iFFT across channels of multi-channel k-space data.
+    Returns channel wise ifft in torch format.
+    """
+    # print("ZF",zero_filled_kspace.shape)
+    img_np = img_t[:,:,:,0].detach().cpu().numpy() + 1j*img_t[:,:,:,1].detach().cpu().numpy()
+    img_np = img_np.transpose(1,2,0)
+    
+    ksp_np = np.fft.fft2(img_np, axes = (0,1))
+    
+    ksp_t = to_tensor(ksp_np)
+    return ksp_t.permute(2,0,1,3).float().cuda()
+
 
 def ifft2(data):
     """
@@ -98,6 +114,39 @@ def ifft2(data):
     # data = fftshift(data, dim=(-3, -2))
     # print("data",data.shape)
     return data
+
+
+def ifft2_np(ksp_t):
+    """
+    ksp_ch has shape = [ch,218,180,2] in torch tensor format
+    Computes the iFFT across channels of multi-channel k-space data.
+    Returns channel wise ifft in torch format.
+    """
+    # print("ZF",zero_filled_kspace.shape)
+    ksp_np = ksp_t[:,:,:,0].detach().cpu().numpy() + 1j*ksp_t[:,:,:,1].detach().cpu().numpy()
+    ksp_np = ksp_np.transpose(1,2,0)
+    
+    img_np = np.fft.ifft2(ksp_np, axes = (0,1))
+    
+    img_t = to_tensor(img_np)
+    return img_t.permute(2,0,1,3).float().cuda()
+
+
+
+def ifft2shift_np(ksp_t):
+    """
+    ksp_ch has shape = [ch,218,180,2] in torch tensor format
+    Computes the iFFT across channels of multi-channel k-space data.
+    Returns channel wise ifft in torch format.
+    """
+    # print("ZF",zero_filled_kspace.shape)
+    ksp_np = ksp_t[:,:,:,0].cpu().numpy() + 1j*ksp_t[:,:,:,1].cpu().numpy()
+    ksp_np = ksp_np.transpose(1,2,0)
+    
+    ksp_shift_np = np.fft.ifftshift(ksp_np,axes=(0,1))
+    
+    ksp_shift_t = to_tensor(ksp_shift_np)
+    return ksp_shift_t.permute(2,0,1,3).float().cuda()
 
 
 def complex_abs(data):
@@ -375,8 +424,7 @@ def zero_filled_reconstruction(zero_filled_kspace):
     
     img_gt_np = sum_of_squares(channel_wise_ifft(zero_filled_kspace))
     img_gt_np = torch.from_numpy(img_gt_np)
-    # img_gt_np_pad = pad(img_gt_np,[256,256])
-    # return img_gt_np_pad
+
     return img_gt_np
 
 

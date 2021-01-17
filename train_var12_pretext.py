@@ -57,8 +57,8 @@ def create_data_loaders(args,data_path):
         dataset=train_data,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=4,
-        pin_memory=True,
+        num_workers=0,
+        pin_memory=False,
     )
 
     dev_loader = DataLoader(
@@ -410,9 +410,9 @@ def main(args):
         best_dev_loss_cmplx = 1e9
         start_epoch = 0
         
-    # logging.info(args)
+    logging.info(args)
 
-    # logging.info(model)
+    logging.info(model)
 
     
     print("PRETEXT Training of VarNet from  with 12-channels data, using",args.loss,"  taking US image as GT")

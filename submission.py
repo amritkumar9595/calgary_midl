@@ -81,15 +81,18 @@ class DataTransform:
         mask = (torch.stack((mask,mask),dim=-1)).float()
         
         ksp_cmplx = ksp[:,:,::2] + 1j*ksp[:,:,1::2]
+       
 
         ksp_t = T.to_tensor(ksp_cmplx)
         ksp_us= ksp_t.permute(2,0,1,3)
-        
+
         img_us = T.ifft2(ksp_us)
-        img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_us)))
+
+        img_us_rss = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_us)))
+        maxi = img_us_rss.max().float()
 
 
-        return ksp_us/img_us_np.max() ,  img_us/img_us_np.max() , img_us_np/img_us_np.max()  , mask, fname.name, slice,img_us_np.max() 
+        return ksp_us/maxi ,  img_us/maxi , img_us_rss/maxi  , mask, fname.name, slice,maxi 
 
 
 def save_reconstructions(reconstructions, out_dir):
@@ -137,10 +140,11 @@ def run_submission(model, data_loader):
         img_us = img_us.cuda()
  
         mask = mask.cuda()
-        maxi = maxi.cuda()
+        maxi = maxi.float().cuda()
 
         out,_,_ = model(img_us,ksp_us,mask)
-        out = out*maxi
+        # print("out_max=",out.max())
+        out = out.float()*maxi/100.0
 
 
         for i in range(1):
@@ -197,9 +201,9 @@ if __name__ == '__main__':
     
                                             #########  12 channel  #######
 
-    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
-    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/model.pt"
-    # out_dir = '/media/student1/RemovableVolume/calgary_new/team_the_enchanted_v3/Track01/12-channel-R=5'
+    test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
+    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/best_model.pt"
+    out_dir = '/media/student1/RemovableVolume/calgary_new/exp1/Track01/12-channel-R=5'
 
     
     # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=10/"
@@ -208,9 +212,9 @@ if __name__ == '__main__':
     
                                             #########  32 channel  #######
     
-    test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/"
-    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/model.pt"
-    out_dir = '/media/student1/RemovableVolume/calgary_new/team_the_enchanted_v3/Track02/32-channel-R=5'
+    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/"
+    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/best_model.pt"
+    # out_dir = '/media/student1/RemovableVolume/calgary_new/exp1/Track02/32-channel-R=5'
     
     # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=10/"
     # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/challenge_calgary/actual/acc_10x/best_dun_model.pt"

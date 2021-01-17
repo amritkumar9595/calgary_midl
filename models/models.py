@@ -612,7 +612,7 @@ class architecture(nn.Module):
 
         sens = self.model_sens(ksp_us, mask)
 
-        img_us =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
+        img_us =  T.combine_all_coils(img_us.float().squeeze(0) , sens.float().squeeze(0)).unsqueeze(0)
 
         out,outstack = self.model_vs(img_us,ksp_us,sens,mask)
 

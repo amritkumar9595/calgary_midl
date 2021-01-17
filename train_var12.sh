@@ -2,11 +2,11 @@ BATCH_SIZE=1
 NUM_EPOCHS=150
 DEVICE='cuda:0'
 
-SAMPLE_RATE=0.1
+SAMPLE_RATE=0.2
                                             ## 12 channel data  TRAINING FROM SCRATCH ##
 
 <<ACC_FACTOR_5x
-RESUME='True'
+RESUME='False'
 LOSS='SSIM'
 DROPOUT=0.0
 DATA_PATH="/media/student1/RemovableVolume/calgary/"

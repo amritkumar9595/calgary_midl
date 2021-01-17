@@ -99,12 +99,15 @@ class DataTransform:
         sens_t = T.to_tensor(sensitivity)
         ksp_t = T.to_tensor(ksp_cmplx)
         ksp_t = ksp_t.permute(2,0,1,3)
-        img_gt = T.ifft2(ksp_t)
+        # img_gt = T.ifft2(ksp_t)
         # print("img_gt,sens_t",img_gt.shape,sens_t.shape)
         # img_gt_sens = T.combine_all_coils(img_gt , sens_t)
         
         # img_gt_np = T.zero_filled_reconstruction(ksp_cmplx)
-        img_gt_np = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_t)))
+
+
+        # img_gt_rss = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_t)))
+        img_gt_np = T.root_sum_of_squares(T.complex_abs(T.ifft2_np(ksp_t)))
         
         
         if acceleration == 5:
@@ -134,17 +137,42 @@ class DataTransform:
         
         ksp_us = torch.where(mask == 0, torch.Tensor([0]), ksp_t)
         
-        img_us = T.ifft2(ksp_us)
+        # img_us = T.ifft2(ksp_us)
         # img_us_sens = T.combine_all_coils(img_us , sens_t)
         
-        ksp_us_np = ksp_us.numpy()
-        ksp_us_cmplx = ksp_us_np[:,:,:,0] + 1j*ksp_us_np[:,:,:,1]
-        ksp_us_cmplx = ksp_us_cmplx.transpose(1,2,0)
-        
-        
-        
+        # ksp_us_np = ksp_us.numpy()
+        # ksp_us_cmplx = ksp_us_np[:,:,:,0] + 1j*ksp_us_np[:,:,:,1]
+        # ksp_us_cmplx = ksp_us_cmplx.transpose(1,2,0)
+
+        # img_us_cmplx = T.channel_wise_ifft(ksp_us_cmplx)
+        # img_us = T.to_tensor(img_us_cmplx).permute(2,0,1,3)
         # img_us_np = T.zero_filled_reconstruction(ksp_us_cmplx)
-        img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_us)))
+        # maxi = img_us_np.max().float()
+        
+        img_us = T.ifft2(ksp_us)
+        img_us_rss = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_us)))
+
+        # img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2_np(ksp_us)))
+
+
+
+
+        # img_us = T.ifft2_np(ksp_us)
+        # img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2_np(ksp_us)))
+
+        
+
+
+
+
+        maxi = img_us_rss.max().float()
+ 
+        
+        
+        # img_us_np_ch = T.zero_filled_reconstruction(ksp_us_cmplx)
+        # img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_us)))
+
+        # maxi = T.zero_filled_reconstruction(ksp_us_cmplx).max()*100.0
         
         
         # pha_gt = T.phase(img_gt_sens)
@@ -163,9 +191,10 @@ class DataTransform:
         # pha_us_pad = T.pad(pha_us,[256,256] )
         
 
-        
+        # print(ksp_us.dtype,img_us.dtype,img_us_np.dtype,img_gt_np.dtype,maxi.dtype)
         # return   ksp_us/img_us_sens.max(), ksp_t/img_us_sens.max() ,  img_us_sens/img_us_sens.max(), img_gt_sens/img_us_sens.max() , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() , sens_t , mask ,img_us_sens.max(),img_us_np.max(),fname
-        return   ksp_us/img_us_np.max() ,  img_us/img_us_np.max()  , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() ,sens_t, mask ,img_us_np.max(),fname
+        # print("img_us",img_us.shape)
+        return   ksp_us/maxi ,  img_us/maxi  , img_us_rss/maxi, 100.0*img_gt_np/maxi ,sens_t, mask ,maxi,fname
         # return   ksp_us, ksp_t ,  img_us, img_gt , img_us_np , img_gt_np , sens_t , mask ,img_us.max(),img_us_np.max(),fname
 
 
@@ -214,6 +243,7 @@ class DataTransform_rotnet:
         deg = degrees[randint]
 
         ksp_cmplx_rot = T.rotation(ksp_cmplx,deg).transpose(1,2,0)
+        maxi = T.zero_filled_reconstruction(ksp_cmplx_rot).max()*100.0
         
         mask_sampling = ~( np.abs(ksp_cmplx_rot).sum( axis = (-1) ) == 0)
         mask = 1.0*mask_sampling
@@ -290,5 +320,6 @@ class DataTransform_rotnet:
         
         # return   ksp_us/img_us_sens.max(), ksp_t/img_us_sens.max() ,  img_us_sens/img_us_sens.max(), img_gt_sens/img_us_sens.max() , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() , sens_t , mask ,img_us_sens.max(),img_us_np.max(),fname
         # print("randint=",randint)
-        return   ksp_t/img_us_np.max() , img_us/img_us_np.max(),  img_us_np/img_us_np.max() , randint ,   mask , sens_t ,  img_us_np.max() , fname
+
+        return   ksp_t/maxi , img_us/maxi,  img_us_np/maxi , randint ,   mask , sens_t ,  maxi , fname
         # return   ksp_us, ksp_t ,  img_us, img_gt , img_us_np , img_gt_np , sens_t , mask ,img_us.max(),img_us_np.max(),fname

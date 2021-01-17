@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader
 from common.args import Args
 from data import transforms as T
 from data.data_loader2 import SliceData , DataTransform
-from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture
+from models.models import DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture
 from tqdm import tqdm
 
 
@@ -60,7 +60,7 @@ def create_data_loaders(args,data_path):
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=0,
-        pin_memory=True,
+        pin_memory=False,
     )
 
 
@@ -68,7 +68,7 @@ def create_data_loaders(args,data_path):
         dataset=dev_data,
         batch_size=args.batch_size,
         num_workers=0,
-        pin_memory=True,
+        pin_memory=False,
     )
 
     display_loader = DataLoader(
@@ -76,7 +76,7 @@ def create_data_loaders(args,data_path):
         batch_size=1,
         shuffle = True,
         num_workers=0,
-        pin_memory=True,
+        pin_memory=False,
     )
 
     
@@ -110,6 +110,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
         mask = mask.to(args.device)
         img_us = img_us.to(args.device)
         # img_gt = img_gt.to(args.device)
+        img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
         img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
 
         
@@ -131,8 +132,12 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
             loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
             loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
 
+        # print("max ori=",maxi)
+        # print("recons max=",out.max(),out.min())
         
-        
+
+        # print("max @ gt=",img_gt_np.max(),img_gt_np.min())
+        # print("max @ us=",img_us_np.max(),img_us_np.min())
           
         optimizer.zero_grad()
 
@@ -187,6 +192,14 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
             # sens = model_sens(ksp_us, mask)
             # img_us =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
             out,_,_ = model(img_us,ksp_us,mask)
+
+
+            # print("recons max=",out.max(),out.min())
+            
+
+            # print("max @ gt=",img_gt_np.max(),img_gt_np.min())
+            # print("max @ us=",img_us_np.max(),img_us_np.min())
+            
 
         
         if(args.loss == 'SSIM'):
@@ -415,7 +428,7 @@ def main(args):
 
     scheduler_vs = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_step_size, args.lr_gamma)
 
-    print("Parameters in Model=",T.count_parameters(model)/1000,"K")
+    print("Parameters in Model=",T.count_parameters(model)/1000000,"M")
 
 
     for epoch in range(start_epoch, args.num_epochs):
