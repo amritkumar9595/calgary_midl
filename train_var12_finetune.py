@@ -53,14 +53,14 @@ def create_data_loaders(args,data_path):
         dataset=train_data,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=0,
+        num_workers=6,
         pin_memory=False,
     )
 
     dev_loader = DataLoader(
         dataset=dev_data,
         batch_size=args.batch_size,
-        num_workers=0,
+        num_workers=6,
         pin_memory=False,
     )
     display_loader = DataLoader(
@@ -88,7 +88,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
     
     for iter, data in enumerate(tqdm(data_loader)):
        
-        ksp_us,img_us,img_us_np,img_gt_np,_,mask,maxi,fname = data
+        ksp_us,img_us,img_us_rss,img_us_np,img_gt_np,_,mask,maxi,fname = data
 
 
         # input_kspace = input_kspace.to(args.device)
@@ -135,7 +135,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
 
         avg_loss_cmplx = 0.99 * avg_loss_cmplx + 0.01 * loss_cmplx.item() if iter > 0 else loss_cmplx.item()
 
-        writer.add_scalar('TrainLoss_cmplx_ssim', loss_cmplx.item(), global_step + iter)
+        writer.add_scalar('TrainLoss_cmplx_ssim', loss_cmplx_ssim.item(), global_step + iter)
         writer.add_scalar('TrainLoss_cmplx_mse', loss_cmplx_mse.item(), global_step + iter)
         # wandb.log({"Train_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Train_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
@@ -164,7 +164,7 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
 
         for iter, data in enumerate(tqdm(data_loader)):
             
-            ksp_us,img_us,img_us_np,img_gt_np,_,mask,maxi,fname = data
+            ksp_us,img_us,img_us_rss,img_us_np,img_gt_np,_,mask,maxi,fname = data
 
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
@@ -223,7 +223,7 @@ def visualize(args, epoch,  model, data_loader, writer):
 
             img_list=[]
 
-            ksp_us ,img_us,img_us_np,img_gt_np , sens,mask,_,_ = data
+            ksp_us ,img_us,img_us_rss,img_us_np,img_gt_np , sens,mask,_,_ = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -327,6 +327,26 @@ def build_model(args):
 
     return  model  
 
+def load_model_resume(checkpoint_file):
+
+    checkpoint = torch.load(checkpoint_file)
+    args = checkpoint['args']
+    model = build_model(args)
+    if args.data_parallel:
+
+        model = torch.nn.DataParallel(model)
+
+    model.load_state_dict(checkpoint['model'])
+
+    model = model.to(args.device)
+
+    optimizer = build_optim((model.parameters()),args.lr,args.weight_decay)
+
+    optimizer.load_state_dict(checkpoint['optimizer'])
+       
+    
+    return checkpoint,  model ,   optimizer
+
 def load_model(checkpoint_file,layer_init = 0):
 
     checkpoint = torch.load(checkpoint_file)
@@ -338,16 +358,16 @@ def load_model(checkpoint_file,layer_init = 0):
 
     model_ori.load_state_dict(checkpoint['model'])
 
-    optimizer = build_optim((model_ori.parameters()),args.lr,args.weight_decay)
+    # optimizer = build_optim((model_ori.parameters()),args.lr,args.weight_decay)
 
-    optimizer.load_state_dict(checkpoint['optimizer'])
+    # optimizer.load_state_dict(checkpoint['optimizer'])
     
     model_rand = build_model(args)
 
     model_ori = change_init(model_ori,model_rand , layer_init).to(args.device)
     
     
-    return checkpoint,  model_ori ,   optimizer
+    return  model_ori 
 
 
 def build_optim(params,lr,weight_decay):
@@ -362,7 +382,7 @@ def main(args):
 
     if args.resume == 'True':
 
-        checkpoint, model,optimizer = load_model(args.checkpoint, layer_init = 0)
+        checkpoint, model,optimizer = load_model_resume(args.checkpoint)
         args = checkpoint['args']
         best_dev_loss_cmplx = checkpoint['best_dev_loss_cmplx']
         start_epoch = checkpoint['epoch']
@@ -371,7 +391,7 @@ def main(args):
     else:
         
         # model  = build_model(args)
-        _, model,_ = load_model(args.pretext_model , layer_init = args.layer_init)
+        model = load_model(checkpoint_file = args.pretext_model , layer_init = args.layer_init)
         # wandb.watch(model)
         # wandb.watch(model_sens)
 
@@ -393,6 +413,7 @@ def main(args):
     print("PRETEXT MODEL loaded from = ",args.pretext_model)
     print()
     print("FINETUNING  of Model with 12-channels GT data, using",args.loss ,"@ LR=",args.lr)
+    print("only the last",args.layer_init,"layers are randonly initialized")
 
     train_loader, dev_loader , display_loader = create_data_loaders(args,args.data_path)  
     print("dataloaders for 12 channels data readdy")  

@@ -149,6 +149,7 @@ class DataTransform:
         # img_us_np = T.zero_filled_reconstruction(ksp_us_cmplx)
         # maxi = img_us_np.max().float()
         
+        img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2_np(ksp_us)))
         img_us = T.ifft2(ksp_us)
         img_us_rss = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_us)))
 
@@ -194,7 +195,7 @@ class DataTransform:
         # print(ksp_us.dtype,img_us.dtype,img_us_np.dtype,img_gt_np.dtype,maxi.dtype)
         # return   ksp_us/img_us_sens.max(), ksp_t/img_us_sens.max() ,  img_us_sens/img_us_sens.max(), img_gt_sens/img_us_sens.max() , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() , sens_t , mask ,img_us_sens.max(),img_us_np.max(),fname
         # print("img_us",img_us.shape)
-        return   ksp_us/maxi ,  img_us/maxi  , img_us_rss/maxi, 100.0*img_gt_np/maxi ,sens_t, mask ,maxi,fname
+        return   ksp_us/maxi ,  img_us/maxi  , img_us_rss/maxi , 100.0*img_us_np/maxi , 100.0*img_gt_np/maxi ,sens_t, mask ,maxi,fname
         # return   ksp_us, ksp_t ,  img_us, img_gt , img_us_np , img_gt_np , sens_t , mask ,img_us.max(),img_us_np.max(),fname
 
 

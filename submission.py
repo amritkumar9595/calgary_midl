@@ -190,7 +190,9 @@ def load_model(checkpoint_file):
 
 def main(test_data_path,model_path,out_dir):
 
+    print("data taken from = ",test_data_path)
     data_loader = create_data_loaders(test_data_path)
+    print("dataloaders readdy.....")
     model = load_model(model_path)
     reconstructions = run_submission(model, data_loader)
     save_reconstructions(reconstructions, Path(out_dir))
@@ -199,26 +201,45 @@ def main(test_data_path,model_path,out_dir):
 
 if __name__ == '__main__':
     
-                                            #########  12 channel  #######
+                                            #########  12-channel _scratch  #######
 
-    test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
-    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/best_model.pt"
-    out_dir = '/media/student1/RemovableVolume/calgary_new/exp1/Track01/12-channel-R=5'
+    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
+    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/0_1/best_model.pt"
+    # out_dir = '/media/student1/RemovableVolume/calgary_new/exp/Track01/12-channel-R=5'
+
+    
+    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=10/"
+    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/challenge_calgary/actual/acc_10x/best_dun_model.pt"
+    # out_dir = '/media/student1/RemovableVolume/calgary/team_the_enchanted_v3/Track01/12-channel-R=10'
+
+
+                                                #########  12-channel _finetune  #######
+
+    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
+    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/finetune/acc_5x/0_layer/0.001/nodc/0.1/best_model.pt"
+    # out_dir = '/media/student1/RemovableVolume/calgary_new/exp0_1/Track01/12-channel-R=5'
 
     
     # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=10/"
     # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/challenge_calgary/actual/acc_10x/best_dun_model.pt"
     # out_dir = '/media/student1/RemovableVolume/calgary/team_the_enchanted_v3/Track01/12-channel-R=10'
     
-                                            #########  32 channel  #######
+                                            #########  32-channel_scratch  #######
     
-    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/"
-    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/best_model.pt"
-    # out_dir = '/media/student1/RemovableVolume/calgary_new/exp1/Track02/32-channel-R=5'
+    test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/"
+    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/0_1/best_model.pt"
+    out_dir = '/media/student1/RemovableVolume/calgary_new/exp/Track02/32-channel-R=5'
     
     # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=10/"
     # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/challenge_calgary/actual/acc_10x/best_dun_model.pt"
     # out_dir = '/media/student1/RemovableVolume/calgary/team_the_enchanted_v3/Track02/32-channel-R=10'
+
+
+                                                #########  32-channel_finetune  #######
+    
+    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/"
+    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/finetune/acc_5x/0_layer/0.001/nodc/0.1/best_model.pt"
+    # out_dir = '/media/student1/RemovableVolume/calgary_new/exp0_1/Track02/32-channel-R=5'
         
     
     main(test_data_path,model_path,out_dir)    

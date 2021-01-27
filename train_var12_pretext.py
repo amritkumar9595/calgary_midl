@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader
 from common.args import Args
 from data import transforms as T
 from data.data_loader2 import SliceData , DataTransform
-from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture
+from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture_nodc
 from tqdm import tqdm
 
 
@@ -57,14 +57,14 @@ def create_data_loaders(args,data_path):
         dataset=train_data,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=0,
+        num_workers=6,
         pin_memory=False,
     )
 
     dev_loader = DataLoader(
         dataset=dev_data,
         batch_size=args.batch_size,
-        num_workers=0,
+        num_workers=6,
         pin_memory=False,
     )
     display_loader = DataLoader(
@@ -92,7 +92,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
     
     for iter, data in enumerate(tqdm(data_loader)):
        
-        ksp_us,img_us,img_us_np,img_gt_np,_,mask,maxi,fname = data
+        ksp_us,img_us,img_us_rss,img_us_np,img_gt_np,_,mask,maxi,fname = data
 
         # input_kspace = input_kspace.to(args.device)
         # inp_mag = mag_us.unsqueeze(1).to(args.device)
@@ -138,7 +138,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
 
         avg_loss_cmplx = 0.99 * avg_loss_cmplx + 0.01 * loss_cmplx.item() if iter > 0 else loss_cmplx.item()
 
-        writer.add_scalar('TrainLoss_cmplx_ssim', loss_cmplx.item(), global_step + iter)
+        writer.add_scalar('TrainLoss_cmplx_ssim', loss_cmplx_ssim.item(), global_step + iter)
         writer.add_scalar('TrainLoss_cmplx_mse', loss_cmplx_mse.item(), global_step + iter)
         # wandb.log({"Train_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Train_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
@@ -167,7 +167,7 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
 
         for iter, data in enumerate(tqdm(data_loader)):
             
-            ksp_us,img_us,img_us_np,img_gt_np,_,mask,maxi,fname = data
+            ksp_us,img_us,img_us_rss,img_us_np,img_gt_np,_,mask,maxi,fname = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -225,7 +225,7 @@ def visualize(args, epoch,  model, data_loader, writer):
 
             img_list=[]
 
-            ksp_us ,img_us,img_us_np,img_gt_np , sens,mask,_,_ = data
+            ksp_us ,img_us,img_us_rss,img_us_np,img_gt_np , sens,mask,_,_ = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -333,6 +333,22 @@ def save_model(args, exp_dir, epoch, model, optimizer,best_dev_loss_cmplx,is_new
         },
         f=exp_dir / 'model.pt'
     )
+
+    if epoch % 10 == 0:
+        dir = str(exp_dir) + '/' + str(epoch)
+        dir = pathlib.Path(dir)
+        dir.mkdir(parents=True, exist_ok=True)
+        torch.save(
+        {
+            'epoch': epoch,
+            'args': args,
+            'model':model.state_dict(),
+            'optimizer': optimizer.state_dict(), 
+            'best_dev_loss_cmplx': best_dev_loss_cmplx,
+            'exp_dir': exp_dir
+        },
+        f=exp_dir / str(epoch) / 'model.pt'
+    )
     if is_new_best_cmplx:   
         shutil.copyfile(exp_dir / 'model.pt', exp_dir / 'best_model.pt')
 
@@ -346,7 +362,7 @@ def build_model(args):
     sens_chans = 8
     sens_pools = 4
 
-    model = architecture(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
+    model = architecture_nodc(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
 
 
     return  model  

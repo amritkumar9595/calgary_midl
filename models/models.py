@@ -574,6 +574,41 @@ class network(nn.Module):
  
         img_mag = T.rss(x,m).float()
         return img_mag , op
+
+
+
+class network_nodc(nn.Module):
+    
+    def __init__(self, alfa=1, beta=1, cascades=5):
+        super(network_nodc, self).__init__()
+        
+        self.cascades = cascades 
+        conv_blocks = []
+        dc_blocks = []
+        wa_blocks = []
+        
+        for i in range(cascades):
+            conv_blocks.append(cnn_layer())  
+            dc_blocks.append(dataConsistencyTerm(alfa)) 
+            wa_blocks.append(weightedAverageTerm(beta)) 
+
+        self.conv_blocks = nn.ModuleList(conv_blocks)
+        self.dc_blocks = nn.ModuleList(dc_blocks)
+        self.wa_blocks = nn.ModuleList(wa_blocks)
+
+    def forward(self, x, k, m, c):
+
+        op=[]        
+        for i in range(self.cascades):
+
+            x_cnn = self.conv_blocks[i](x)
+            # Sx, SS = self.dc_blocks[i].perform(x, k, m, c)
+            # x = self.wa_blocks[i].perform(x + x_cnn, Sx, SS)
+            x = x + x_cnn
+            op.append(x)
+ 
+        img_mag = T.rss(x, m).float()
+        return img_mag , op
     
 
 class classifier(nn.Module):
@@ -617,6 +652,56 @@ class architecture(nn.Module):
         out,outstack = self.model_vs(img_us,ksp_us,sens,mask)
 
         return out, outstack, sens
+
+
+class architecture_nodc(nn.Module):
+
+    def __init__(self,dccoeff=0.1,wacoeff=0.1,cascade=5,sens_chans=8, sens_pools=4):
+        super(architecture_nodc,self).__init__()
+        self.dccoeff = dccoeff
+        self.wacoeff = wacoeff
+        self.cascade = cascade
+        self.sens_chans = sens_chans
+        self.sens_pools = sens_pools
+
+        self.model_vs = network_nodc(self.dccoeff, self.wacoeff, self.cascade)
+        self.model_sens = SensitivityModel(self.sens_chans, self.sens_pools)
+
+    def forward(self,img_us,ksp_us,mask):
+
+        sens = self.model_sens(ksp_us, mask)
+
+        img_us =  T.combine_all_coils(img_us.float().squeeze(0) , sens.float().squeeze(0)).unsqueeze(0)
+
+        out,outstack = self.model_vs(img_us,ksp_us,sens,mask)
+
+        return out, outstack, sens
+
+
+class architecture_sens(nn.Module):
+
+    def __init__(self,dccoeff=0.1,wacoeff=0.1,cascade=5,sens_chans=8, sens_pools=4):
+        super(architecture_nodc,self).__init__()
+        self.dccoeff = dccoeff
+        self.wacoeff = wacoeff
+        self.cascade = cascade
+        self.sens_chans = sens_chans
+        self.sens_pools = sens_pools
+
+        self.model_vs = network_nodc(self.dccoeff, self.wacoeff, self.cascade)
+        self.model_sens = SensitivityModel(self.sens_chans, self.sens_pools)
+
+    def forward(self,img_us,ksp_us,mask):
+
+        sens = self.model_sens(ksp_us, mask)
+
+        img_us =  T.combine_all_coils(img_us.float().squeeze(0) , sens.float().squeeze(0)).unsqueeze(0)
+
+        out,outstack = self.model_vs(img_us,ksp_us,sens,mask)
+
+        return out, outstack, sens
+
+
 
 
 def change_init(model_ori,model_rand,layers = 0):

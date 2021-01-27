@@ -129,7 +129,7 @@ def ifft2_np(ksp_t):
     img_np = np.fft.ifft2(ksp_np, axes = (0,1))
     
     img_t = to_tensor(img_np)
-    return img_t.permute(2,0,1,3).float().cuda()
+    return img_t.permute(2,0,1,3).float() #.cuda()
 
 
 
