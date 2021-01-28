@@ -16,7 +16,7 @@ class SliceData(Dataset):
     A PyTorch Dataset that provides access to MR image slices.
     """
 
-    def __init__(self, root, transform,sample_rate,acceleration):
+    def __init__(self, root, transform,no_of_vol,acceleration):
         """
         Args:
             root (pathlib.Path): Path to the dataset.
@@ -33,17 +33,23 @@ class SliceData(Dataset):
         self.transform = transform
 
         self.examples = []
-        files = list(pathlib.Path(root).iterdir())
+        files = list(pathlib.Path(root).iterdir())    # total number of all files ie 7332
 
         
-        if sample_rate < 1:
-            random.shuffle(files)
-            num_files = round(len(files) * sample_rate)
-            files = files[:num_files]
+        # if sample_rate < 1:
+        #     random.shuffle(files)
+        #     num_files = round(len(files) * sample_rate)
+        #     files = files[:num_files]
+
+
+        # if sample_rate < 1:
+        # random.shuffle(files)
+        num_files = len(files) # * sample_rate)
+        files = files[:156*no_of_vol]     # here sample_rate is the number of volumes to be
             
         for fname in sorted(files):
 
-                self.examples.append(str(fname)) # [(fname, slice) for slice in range(50,num_slices-50)]
+                self.examples.append(str(fname)) 
 
             
     def __len__(self):

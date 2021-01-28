@@ -20,7 +20,7 @@ class Args(argparse.ArgumentParser):
         self.add_argument('--seed', default=42, type=int, help='Seed for random number generators')
 
         
-        self.add_argument('--sample-rate', type=float, default=1.,
+        self.add_argument('--sample-rate', type=int, default=1,
                           help='Fraction of total volumes to include')
 
         self.add_argument('--center-fractions', nargs='+', default=[0.08], type=float,
