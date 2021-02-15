@@ -8,7 +8,7 @@ import pathlib
 import random
 import shutil
 import time
-import wandb
+# import wandb
 import os 
 import numpy as np
 import torch
@@ -19,17 +19,13 @@ from torch.utils.data import DataLoader
 from common.args import Args
 from data import transforms as T
 from data.data_loader2 import SliceData , DataTransform
-from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture_nodc
+from models.models import UnetModel, network, SSIM ,SensitivityModel, architecture_unet, change_init
 from tqdm import tqdm
 
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# # wandb login
-# import wandb
-# wandb.init()
 
 
 def create_datasets(args,data_path):
@@ -43,7 +39,7 @@ def create_datasets(args,data_path):
     dev_data = SliceData(
         root=str(data_path) + '/Val',
         transform=DataTransform(),
-        no_of_vol=20,             #args.sample_rate,
+        no_of_vol= 20,                      #args.sample_rate, #1.0
         acceleration=args.acceleration
     )
     return dev_data, train_data
@@ -94,6 +90,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
        
         ksp_us,img_us,img_us_rss,img_us_np,img_gt_np,_,mask,maxi,fname = data
 
+
         # input_kspace = input_kspace.to(args.device)
         # inp_mag = mag_us.unsqueeze(1).to(args.device)
         # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -121,11 +118,11 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
         # loss_cmplx = F.mse_loss(out,img_gt_np.cuda())
         
         if(args.loss == 'SSIM'):
-            loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
-            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
+            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
         else:
-            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
-            loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
+            loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
 
         
         
@@ -140,6 +137,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
 
         writer.add_scalar('TrainLoss_cmplx_ssim', loss_cmplx_ssim.item(), global_step + iter)
         writer.add_scalar('TrainLoss_cmplx_mse', loss_cmplx_mse.item(), global_step + iter)
+
         # wandb.log({"Train_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Train_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
         if iter % args.report_interval == 0:
@@ -162,12 +160,15 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
 
 
     losses_cmplx = []
+    losses_cmplx_ssim =[]
+    losses_cmplx_mse = []
     start = time.perf_counter()
     with torch.no_grad():
 
         for iter, data in enumerate(tqdm(data_loader)):
             
             ksp_us,img_us,img_us_rss,img_us_np,img_gt_np,_,mask,maxi,fname = data
+
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -187,19 +188,21 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
 
         
         if(args.loss == 'SSIM'):
-            loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
-            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
+            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
         else:
-            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
-            loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
-          
+            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
+            loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
+
+        losses_cmplx_ssim.append(loss_cmplx_ssim.item())
+        losses_cmplx_mse.append(loss_cmplx_mse.item())  
             
         losses_cmplx.append(loss_cmplx.item())
 
         # wandb.log({"Dev_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Dev_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
-        writer.add_scalar('Dev_Loss_cmplx_ssim',loss_cmplx_ssim, epoch)
-        writer.add_scalar('Dev_Loss_cmplx_mse',loss_cmplx_mse, epoch)
+        writer.add_scalar('Dev_Loss_cmplx_ssim',np.mean(losses_cmplx_ssim), epoch)
+        writer.add_scalar('Dev_Loss_cmplx_mse',np.mean(losses_cmplx_mse), epoch)
         
     return  np.mean(losses_cmplx) , time.perf_counter() - start
 
@@ -242,7 +245,7 @@ def visualize(args, epoch,  model, data_loader, writer):
             out,out_stack,sens= model(img_us,ksp_us,mask)
             # print("sens",sens.shape)
             # img_us_sens =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
-            # out,out_stack = model_vs(img_us_sens,ksp_us,sens,mask)
+            # out,out_stack = model(img_us_sens,ksp_us,sens,mask)
             # print("img_us",img_us.shape)
 
             # print("shape",out_stack[0].shape,out_stack[1].shape,out_stack[1].shape)
@@ -253,7 +256,7 @@ def visualize(args, epoch,  model, data_loader, writer):
             # print("img_us_cmplx_abs",img_us_cmplx_abs.shape)
             # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             
-            error_cmplx = torch.abs(out.cuda() - img_us_np.cuda())
+            error_cmplx = torch.abs(out.cuda() - img_gt_np.cuda())
             # print("error_complex",error_cmplx.shape)
             # error_cmplx_abs = (torch.sqrt(error_cmplx[:,:,:,0]**2 + error_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             sens = sens.squeeze(0)
@@ -276,8 +279,7 @@ def visualize(args, epoch,  model, data_loader, writer):
             # print("img_us",img_us_np.shape)
             # wandb.log({"img": [wandb.Image(norm_image(img_us_np.unsqueeze(0)), caption="US-Image"), wandb.Image(norm_image(out), caption="Reconstruction"),
             # wandb.Image(norm_image(img_gt_np.unsqueeze(0)), caption="GT-Image"),wandb.Image(norm_image(error_cmplx), caption="Error")]})
-            save_image(img_us_np,'Target')
-            save_image(img_gt_np,'GT')
+            save_image(img_gt_np,'Target')
             
             save_image(img_us_cmplx_abs,'US-image')
             save_image(sens_cmplx_abs,'sens')
@@ -289,32 +291,11 @@ def visualize(args, epoch,  model, data_loader, writer):
 
 
             
-            
-            out_cmplx=out_stack[0]
-            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
-            # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons0')
-            
-            out_cmplx=out_stack[1]
-            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
-            # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons1')
-            
-            out_cmplx=out_stack[2]
-            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
-            # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons2')
-            
-            out_cmplx=out_stack[3]
-            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
-            # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons3')
-            
-            out_cmplx=out_stack[4]
-            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
-            # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons4')
-            
+            for i in range(5):
+                out_cmplx=out_stack[i]
+                out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+                # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
+                save_image(out_cmplx_abs, 'Recons'+str(i))
 
             break
 
@@ -333,22 +314,6 @@ def save_model(args, exp_dir, epoch, model, optimizer,best_dev_loss_cmplx,is_new
         },
         f=exp_dir / 'model.pt'
     )
-
-    if epoch % 10 == 0:
-        dir = str(exp_dir) + '/' + str(epoch)
-        dir = pathlib.Path(dir)
-        dir.mkdir(parents=True, exist_ok=True)
-        torch.save(
-        {
-            'epoch': epoch,
-            'args': args,
-            'model':model.state_dict(),
-            'optimizer': optimizer.state_dict(), 
-            'best_dev_loss_cmplx': best_dev_loss_cmplx,
-            'exp_dir': exp_dir
-        },
-        f=exp_dir / str(epoch) / 'model.pt'
-    )
     if is_new_best_cmplx:   
         shutil.copyfile(exp_dir / 'model.pt', exp_dir / 'best_model.pt')
 
@@ -362,12 +327,12 @@ def build_model(args):
     sens_chans = 8
     sens_pools = 4
 
-    model = architecture_nodc(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
+    model = architecture_unet(dccoeff, wacoeff, cascade,sens_chans, sens_pools)
 
 
     return  model  
 
-def load_model(checkpoint_file):
+def load_model_resume(checkpoint_file):
 
     checkpoint = torch.load(checkpoint_file)
     args = checkpoint['args']
@@ -378,13 +343,36 @@ def load_model(checkpoint_file):
 
     model.load_state_dict(checkpoint['model'])
 
-    optimizer = build_optim(model.parameters(),args.lr,args.weight_decay)
+    model = model.to(args.device)
+
+    optimizer = build_optim((model.parameters()),args.lr,args.weight_decay)
 
     optimizer.load_state_dict(checkpoint['optimizer'])
-    
-    
+       
     
     return checkpoint,  model ,   optimizer
+
+def load_model(checkpoint_file,layer_init = 0):
+
+    checkpoint = torch.load(checkpoint_file)
+    args = checkpoint['args']
+    model_ori = build_model(args)
+    if args.data_parallel:
+
+        model = torch.nn.DataParallel(model)
+
+    model_ori.load_state_dict(checkpoint['model'])
+
+    # optimizer = build_optim((model_ori.parameters()),args.lr,args.weight_decay)
+
+    # optimizer.load_state_dict(checkpoint['optimizer'])
+    
+    model_rand = build_model(args)
+
+    model_ori = change_init(model_ori,model_rand , layer_init).to(args.device)
+    
+    
+    return  model_ori 
 
 
 def build_optim(params,lr,weight_decay):
@@ -395,22 +383,22 @@ def build_optim(params,lr,weight_decay):
 
 def main(args):
     args.exp_dir.mkdir(parents=True, exist_ok=True)
-    writer = SummaryWriter(log_dir=args.exp_dir / 'summary')
+    writer = SummaryWriter(log_dir=args.exp_dir / 'vs_summary')
 
     if args.resume == 'True':
-        
-        print("resuming training of model loaded from:",args.checkpoint)
-
-        checkpoint, model,optimizer = load_model(args.checkpoint)
+        print("resuming.......")
+        checkpoint, model,optimizer = load_model_resume(args.checkpoint)
         args = checkpoint['args']
         best_dev_loss_cmplx = checkpoint['best_dev_loss_cmplx']
         start_epoch = checkpoint['epoch']
-
+        print("best_dev_loss_cmplx=",best_dev_loss_cmplx)
+        print("starting from epoch=",start_epoch)
         del checkpoint
     else:
         
-        model  = build_model(args)
-        # wandb.watch(model_vs)
+        # model  = build_model(args)
+        model = load_model(checkpoint_file = args.pretext_model , layer_init = args.layer_init)
+        # wandb.watch(model)
         # wandb.watch(model_sens)
 
 
@@ -418,8 +406,6 @@ def main(args):
         if args.data_parallel:
 
             model = torch.nn.DataParallel(model)
-
-
 
         optimizer = build_optim((model.parameters()),args.lr,args.weight_decay)
 
@@ -430,15 +416,15 @@ def main(args):
 
     logging.info(model)
 
-    
-    print("PRETEXT Training of VarNet from  with 12-channels data, using",args.loss,"  taking US image as GT")
+    print("PRETEXT MODEL loaded from = ",args.pretext_model)
+    print()
+    print("FINETUNING  of Model_Unet with 12-channels GT data, using",args.loss ,"@ LR=",args.lr)
+    print("only the last",args.layer_init,"layers are randonly initialized")
 
     train_loader, dev_loader , display_loader = create_data_loaders(args,args.data_path)  
     print("dataloaders for 12 channels data readdy")  
 
     scheduler_vs = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_step_size, args.lr_gamma)
-
-    
 
     print("Parameters in Model=",T.count_parameters(model)/1000000,"M")
 
@@ -463,7 +449,7 @@ def main(args):
             f'Epoch = [{epoch:4d}/{args.num_epochs:4d}]  TrainLoss_cmplx = {train_loss_cmplx:.4g}  '
             f'DevLoss_cmplx = {dev_loss_cmplx:.4g} TrainTime = {train_time:.4f}s DevTime = {dev_time:.4f}s',
         )
-        # torch.save(model_vs.state_dict(), os.path.join(wandb.run.dir, 'model_vs.pt'))
+        # torch.save(model.state_dict(), os.path.join(wandb.run.dir, 'model.pt'))
         # torch.save(model_sens.state_dict(), os.path.join(wandb.run.dir, 'model_sens.pt'))
     writer.close()
     # wandb.finish()
@@ -499,12 +485,16 @@ def create_arg_parser():
     parser.add_argument('--data-path', type=pathlib.Path,help='Path to the dataset')
     
     parser.add_argument('--checkpoint', type=str,help='Path to an existing checkpoint. Used along with "--resume"')
+    parser.add_argument('--pretext-model', type=str,help='Path to the model trained with pretext task')
+    
 
     parser.add_argument('--loss', type=str, default='SSIM')
     parser.add_argument('--residual', type=str, default='False')
     parser.add_argument('--acceleration', type=int,help='Ratio of k-space columns to be sampled. 5x or 10x masks provided')
     parser.add_argument('--dropout', type=float,help='% of nodes in decoder to be dropped')
-    
+    parser.add_argument('--layer-init', type=int,help='number of layers to be initialized with random from back')
+    parser.add_argument('--cascade', default=12, type=int, help='no. of U-nets in cascade')
+
     return parser
 
 

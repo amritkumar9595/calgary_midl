@@ -15,7 +15,7 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from collections import defaultdict
-from models.models import UnetModel,DataConsistencyLayer , _NetG , network , architecture,SSIM
+from models.models import  architecture_unet
 import random
 import os
 import numpy as np
@@ -161,14 +161,14 @@ def build_model(args):
     
     wacoeff = 0.1
     dccoeff = 0.1
-    cascade = 5   
+    cascade = args.cascade   
     sens_chans = 8
     sens_pools = 4
 
-    model = architecture(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
+    model = architecture_unet(dccoeff, wacoeff, cascade,sens_chans, sens_pools).cuda()
 
 
-    return  model
+    return  model  
 
 
 def load_model(checkpoint_file):
@@ -196,6 +196,8 @@ def main(test_data_path,model_path,out_dir):
     model = load_model(model_path)
     reconstructions = run_submission(model, data_loader)
     save_reconstructions(reconstructions, Path(out_dir))
+    print()
+    print("Reconstructions saved @ :",out_dir)
 
 
 
@@ -205,22 +207,37 @@ if __name__ == '__main__':
 
                                                 #########  12-channel   #######
 
+    # VOLUME = '10'
+    # ACTION = 'scratch'
+
     # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
-    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/finetune/acc_5x/0_layer/0.001/nodc/0.05/best_model.pt"
-    # out_dir = '/media/student1/RemovableVolume/calgary_new/exp0_fine_05/Track01/12-channel-R=5'
+    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + ACTION +"/acc_5x/" + VOLUME + "_volume/12_cascade/0.001_lr/best_model.pt"
+    # out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track01/12-channel-R=5"
 
     
-    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=10/"
-    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/challenge_calgary/actual/acc_10x/best_dun_model.pt"
-    # out_dir = '/media/student1/RemovableVolume/calgary/team_the_enchanted_v3/Track01/12-channel-R=10'
+    # VOLUME = '10'
+    # ACTION = 'finetune'
+
+    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
+    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + ACTION +"/acc_5x/0_layer/0.001_lr/" + VOLUME + "_volume/best_model.pt"
+    # out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track01/12-channel-R=5"
 
 
 
                                                 #########  32-channel  #######
+    # VOLUME = '10'
+    # ACTION = 'scratch'
     
+    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/"
+    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + ACTION +"/acc_5x/" + VOLUME + "_volume/12_cascade/0.001_lr/best_model.pt"
+    # out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track02/32-channel-R=5"
+
+    VOLUME = '10'
+    ACTION = 'finetune'
+
     test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/"
-    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/finetune/acc_5x/0_layer/0.001/nodc/0.05/best_model.pt"
-    out_dir = '/media/student1/RemovableVolume/calgary_new/exp0_fine_05/Track02/32-channel-R=5'
+    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + ACTION +"/acc_5x/0_layer/0.001_lr/" + VOLUME + "_volume/best_model.pt"
+    out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track02/32-channel-R=5"
         
     
     main(test_data_path,model_path,out_dir)    

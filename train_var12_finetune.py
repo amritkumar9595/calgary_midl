@@ -33,13 +33,13 @@ def create_datasets(args,data_path):
     train_data = SliceData(
         root=str(data_path) + '/Train',
         transform=DataTransform(),
-        sample_rate=args.sample_rate,
+        no_of_vol=args.sample_rate,
         acceleration=args.acceleration
     )
     dev_data = SliceData(
         root=str(data_path) + '/Val',
         transform=DataTransform(),
-        sample_rate= 1.0,                      #args.sample_rate, #1.0
+        no_of_vol= 20,                      #args.sample_rate, #1.0
         acceleration=args.acceleration
     )
     return dev_data, train_data
@@ -137,6 +137,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
 
         writer.add_scalar('TrainLoss_cmplx_ssim', loss_cmplx_ssim.item(), global_step + iter)
         writer.add_scalar('TrainLoss_cmplx_mse', loss_cmplx_mse.item(), global_step + iter)
+
         # wandb.log({"Train_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Train_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
         if iter % args.report_interval == 0:
@@ -159,6 +160,8 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
 
 
     losses_cmplx = []
+    losses_cmplx_ssim =[]
+    losses_cmplx_mse = []
     start = time.perf_counter()
     with torch.no_grad():
 
@@ -190,14 +193,16 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
         else:
             loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
             loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
-          
+
+        losses_cmplx_ssim.append(loss_cmplx_ssim.item())
+        losses_cmplx_mse.append(loss_cmplx_mse.item())  
             
         losses_cmplx.append(loss_cmplx.item())
 
         # wandb.log({"Dev_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Dev_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
-        writer.add_scalar('Dev_Loss_cmplx_ssim',loss_cmplx_ssim, epoch)
-        writer.add_scalar('Dev_Loss_cmplx_mse',loss_cmplx_mse, epoch)
+        writer.add_scalar('Dev_Loss_cmplx_ssim',np.mean(losses_cmplx_ssim), epoch)
+        writer.add_scalar('Dev_Loss_cmplx_mse',np.mean(losses_cmplx_mse), epoch)
         
     return  np.mean(losses_cmplx) , time.perf_counter() - start
 

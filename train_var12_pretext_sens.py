@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader
 from common.args import Args
 from data import transforms as T
 from data.data_loader2 import SliceData , DataTransform
-from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture_nodc
+from models.models import  network, SSIM ,SensitivityModel, architecture_sens
 from tqdm import tqdm
 
 
@@ -115,11 +115,11 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
         # print("fname",fname)
         # print("img_us,ksp_us,sens,img_gt_np",img_us.max(),ksp_us.max(),sens.max(),img_gt_np.max())
         # print("mask in train_var12=",mask.shape)
-        out,_,_ = model(img_us,ksp_us,mask)
+        out,_ = model(img_us,ksp_us,mask)
         
         # print("out",out.shape)
         # loss_cmplx = F.mse_loss(out,img_gt_np.cuda())
-        
+        # print("out",out.max(),"img_us_np=",img_us_np.max())
         if(args.loss == 'SSIM'):
             loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
             loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
@@ -183,7 +183,7 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
             
             # sens = model_sens(ksp_us, mask)
             # img_us =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
-            out,_,_ = model(img_us,ksp_us,mask)
+            out,_ = model(img_us,ksp_us,mask)
 
         
         if(args.loss == 'SSIM'):
@@ -239,7 +239,7 @@ def visualize(args, epoch,  model, data_loader, writer):
             img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
             img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
             
-            out,out_stack,sens= model(img_us,ksp_us,mask)
+            out,sens= model(img_us,ksp_us,mask)
             # print("sens",sens.shape)
             # img_us_sens =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
             # out,out_stack = model_vs(img_us_sens,ksp_us,sens,mask)
@@ -290,30 +290,30 @@ def visualize(args, epoch,  model, data_loader, writer):
 
             
             
-            out_cmplx=out_stack[0]
-            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
-            # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons0')
+            # out_cmplx=out_stack[0]
+            # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            # # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
+            # save_image(out_cmplx_abs, 'Recons0')
             
-            out_cmplx=out_stack[1]
-            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
-            # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons1')
+            # out_cmplx=out_stack[1]
+            # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            # # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
+            # save_image(out_cmplx_abs, 'Recons1')
             
-            out_cmplx=out_stack[2]
-            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
-            # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons2')
+            # out_cmplx=out_stack[2]
+            # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            # # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
+            # save_image(out_cmplx_abs, 'Recons2')
             
-            out_cmplx=out_stack[3]
-            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
-            # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons3')
+            # out_cmplx=out_stack[3]
+            # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            # # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
+            # save_image(out_cmplx_abs, 'Recons3')
             
-            out_cmplx=out_stack[4]
-            out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
-            # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons4')
+            # out_cmplx=out_stack[4]
+            # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            # # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
+            # save_image(out_cmplx_abs, 'Recons4')
             
 
             break
@@ -362,7 +362,7 @@ def build_model(args):
     sens_chans = 8
     sens_pools = 4
 
-    model = architecture_nodc(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
+    model = architecture_sens(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
 
 
     return  model  
@@ -431,7 +431,7 @@ def main(args):
     logging.info(model)
 
     
-    print("PRETEXT Training of VarNet from  with 12-channels data, using",args.loss,"  taking US image as GT")
+    print("PRETEXT Training of UNet to predict sensitivity maps from  with 12-channels data, using",args.loss,"  taking US image as GT")
 
     train_loader, dev_loader , display_loader = create_data_loaders(args,args.data_path)  
     print("dataloaders for 12 channels data readdy")  
@@ -504,6 +504,7 @@ def create_arg_parser():
     parser.add_argument('--residual', type=str, default='False')
     parser.add_argument('--acceleration', type=int,help='Ratio of k-space columns to be sampled. 5x or 10x masks provided')
     parser.add_argument('--dropout', type=float,help='% of nodes in decoder to be dropped')
+    parser.add_argument('--cascade', default=12, type=int, help='no. of U-nets in cascade')
     
     return parser
 

@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader
 from common.args import Args
 from data import transforms as T
 from data.data_loader2 import SliceData , DataTransform
-from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture_nodc
+from models.models import  network, SSIM ,SensitivityModel, architecture, architecture_unet
 from tqdm import tqdm
 
 
@@ -40,19 +40,21 @@ def create_datasets(args,data_path):
         no_of_vol=args.sample_rate,
         acceleration=args.acceleration
     )
+
     dev_data = SliceData(
         root=str(data_path) + '/Val',
         transform=DataTransform(),
-        no_of_vol=20,             #args.sample_rate,
+        no_of_vol=20,
         acceleration=args.acceleration
     )
-    return dev_data, train_data
+    return train_data, dev_data
 
 
 def create_data_loaders(args,data_path):
-    dev_data, train_data = create_datasets(args,data_path)
+    train_data, dev_data = create_datasets(args,data_path)
     display_data = [dev_data[i] for i in range(0, len(dev_data) // 16)]
- 
+    
+
     train_loader = DataLoader(
         dataset=train_data,
         batch_size=args.batch_size,
@@ -61,12 +63,14 @@ def create_data_loaders(args,data_path):
         pin_memory=False,
     )
 
+
     dev_loader = DataLoader(
         dataset=dev_data,
         batch_size=args.batch_size,
         num_workers=6,
         pin_memory=False,
     )
+
     display_loader = DataLoader(
         dataset=display_data,
         batch_size=1,
@@ -74,6 +78,7 @@ def create_data_loaders(args,data_path):
         num_workers=0,
         pin_memory=False,
     )
+
     
     return train_loader, dev_loader , display_loader
 
@@ -105,8 +110,8 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
         mask = mask.to(args.device)
         img_us = img_us.to(args.device)
         # img_gt = img_gt.to(args.device)
-        img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
         img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
+        img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
 
         
         # sens = model_sens(ksp_us, mask)
@@ -121,14 +126,18 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
         # loss_cmplx = F.mse_loss(out,img_gt_np.cuda())
         
         if(args.loss == 'SSIM'):
-            loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
-            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
+            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
         else:
-            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
-            loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
+            loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
 
+        # print("max ori=",maxi)
+        # print("recons max=",out.max(),out.min())
         
-        
+
+        # print("max @ gt=",img_gt_np.max(),img_gt_np.min())
+        # print("max @ us=",img_us_np.max(),img_us_np.min())
           
         optimizer.zero_grad()
 
@@ -138,8 +147,9 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
 
         avg_loss_cmplx = 0.99 * avg_loss_cmplx + 0.01 * loss_cmplx.item() if iter > 0 else loss_cmplx.item()
 
-        writer.add_scalar('TrainLoss_cmplx_ssim', loss_cmplx_ssim.item(), global_step + iter)
+        writer.add_scalar('TrainLoss_cmplx_ssim', loss_cmplx.item(), global_step + iter)
         writer.add_scalar('TrainLoss_cmplx_mse', loss_cmplx_mse.item(), global_step + iter)
+
         # wandb.log({"Train_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Train_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
         if iter % args.report_interval == 0:
@@ -162,6 +172,9 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
 
 
     losses_cmplx = []
+    losses_cmplx_ssim=[]
+    losses_cmplx_mse=[]
+
     start = time.perf_counter()
     with torch.no_grad():
 
@@ -179,27 +192,37 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
             # img_gt = img_gt.to(args.device)
             img_us = img_us.to(args.device)
             img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
-            img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
             
             # sens = model_sens(ksp_us, mask)
             # img_us =  T.combine_all_coils(img_us.squeeze(0) , sens.squeeze(0)).unsqueeze(0)
             out,_,_ = model(img_us,ksp_us,mask)
 
+
+            # print("recons max=",out.max(),out.min())
+            
+
+            # print("max @ gt=",img_gt_np.max(),img_gt_np.min())
+            # print("max @ us=",img_us_np.max(),img_us_np.min())
+            
+
         
         if(args.loss == 'SSIM'):
-            loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
-            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
+            loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
         else:
-            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
-            loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
+            loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
           
-            
+
+        losses_cmplx_ssim.append(loss_cmplx_ssim.item())
+        losses_cmplx_mse.append(loss_cmplx_mse.item())
+
         losses_cmplx.append(loss_cmplx.item())
 
         # wandb.log({"Dev_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Dev_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
-        writer.add_scalar('Dev_Loss_cmplx_ssim',loss_cmplx_ssim, epoch)
-        writer.add_scalar('Dev_Loss_cmplx_mse',loss_cmplx_mse, epoch)
+        writer.add_scalar('Dev_Loss_cmplx_ssim',np.mean(losses_cmplx_ssim), epoch)
+        writer.add_scalar('Dev_Loss_cmplx_mse',np.mean(losses_cmplx_mse), epoch)
         
     return  np.mean(losses_cmplx) , time.perf_counter() - start
 
@@ -237,7 +260,6 @@ def visualize(args, epoch,  model, data_loader, writer):
             # img_gt = img_gt.to(args.device)
             img_us = img_us.to(args.device)
             img_gt_np = img_gt_np.unsqueeze(0).to(args.device).float()
-            img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
             
             out,out_stack,sens= model(img_us,ksp_us,mask)
             # print("sens",sens.shape)
@@ -253,7 +275,7 @@ def visualize(args, epoch,  model, data_loader, writer):
             # print("img_us_cmplx_abs",img_us_cmplx_abs.shape)
             # out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             
-            error_cmplx = torch.abs(out.cuda() - img_us_np.cuda())
+            error_cmplx = torch.abs(out.cuda() - img_gt_np.cuda())
             # print("error_complex",error_cmplx.shape)
             # error_cmplx_abs = (torch.sqrt(error_cmplx[:,:,:,0]**2 + error_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             sens = sens.squeeze(0)
@@ -276,8 +298,7 @@ def visualize(args, epoch,  model, data_loader, writer):
             # print("img_us",img_us_np.shape)
             # wandb.log({"img": [wandb.Image(norm_image(img_us_np.unsqueeze(0)), caption="US-Image"), wandb.Image(norm_image(out), caption="Reconstruction"),
             # wandb.Image(norm_image(img_gt_np.unsqueeze(0)), caption="GT-Image"),wandb.Image(norm_image(error_cmplx), caption="Error")]})
-            save_image(img_us_np,'Target')
-            save_image(img_gt_np,'GT')
+            save_image(img_gt_np,'Target')
             
             save_image(img_us_cmplx_abs,'US-image')
             save_image(sens_cmplx_abs,'sens')
@@ -305,15 +326,15 @@ def visualize(args, epoch,  model, data_loader, writer):
             # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
             save_image(out_cmplx_abs, 'Recons2')
             
-            out_cmplx=out_stack[3]
+            out_cmplx=out_stack[-2]
             out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons3')
+            save_image(out_cmplx_abs, 'Recons_-2')
             
-            out_cmplx=out_stack[4]
+            out_cmplx=out_stack[-1]
             out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             # out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
-            save_image(out_cmplx_abs, 'Recons4')
+            save_image(out_cmplx_abs, 'Recons_-1')
             
 
             break
@@ -333,22 +354,6 @@ def save_model(args, exp_dir, epoch, model, optimizer,best_dev_loss_cmplx,is_new
         },
         f=exp_dir / 'model.pt'
     )
-
-    if epoch % 10 == 0:
-        dir = str(exp_dir) + '/' + str(epoch)
-        dir = pathlib.Path(dir)
-        dir.mkdir(parents=True, exist_ok=True)
-        torch.save(
-        {
-            'epoch': epoch,
-            'args': args,
-            'model':model.state_dict(),
-            'optimizer': optimizer.state_dict(), 
-            'best_dev_loss_cmplx': best_dev_loss_cmplx,
-            'exp_dir': exp_dir
-        },
-        f=exp_dir / str(epoch) / 'model.pt'
-    )
     if is_new_best_cmplx:   
         shutil.copyfile(exp_dir / 'model.pt', exp_dir / 'best_model.pt')
 
@@ -362,7 +367,7 @@ def build_model(args):
     sens_chans = 8
     sens_pools = 4
 
-    model = architecture_nodc(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
+    model = architecture_unet(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
 
 
     return  model  
@@ -395,11 +400,9 @@ def build_optim(params,lr,weight_decay):
 
 def main(args):
     args.exp_dir.mkdir(parents=True, exist_ok=True)
-    writer = SummaryWriter(log_dir=args.exp_dir / 'summary')
+    writer = SummaryWriter(log_dir=args.exp_dir / 'vs_summary')
 
     if args.resume == 'True':
-        
-        print("resuming training of model loaded from:",args.checkpoint)
 
         checkpoint, model,optimizer = load_model(args.checkpoint)
         args = checkpoint['args']
@@ -409,20 +412,14 @@ def main(args):
         del checkpoint
     else:
         
-        model  = build_model(args)
+        model  = build_model(args).to(args.device)
         # wandb.watch(model_vs)
         # wandb.watch(model_sens)
 
-
-
         if args.data_parallel:
-
             model = torch.nn.DataParallel(model)
 
-
-
-        optimizer = build_optim((model.parameters()),args.lr,args.weight_decay)
-
+        optimizer = build_optim(model.parameters(),args.lr,args.weight_decay)
         best_dev_loss_cmplx = 1e9
         start_epoch = 0
         
@@ -431,18 +428,16 @@ def main(args):
     logging.info(model)
 
     
-    print("PRETEXT Training of VarNet from  with 12-channels data, using",args.loss,"  taking US image as GT")
+    print("training VarNet_U-Net from SCRATCH with 12-channels data, using SSIM loss")
 
     train_loader, dev_loader , display_loader = create_data_loaders(args,args.data_path)  
     print("dataloaders for 12 channels data readdy")  
 
     scheduler_vs = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_step_size, args.lr_gamma)
 
-    
-
     print("Parameters in Model=",T.count_parameters(model)/1000000,"M")
 
-    
+
     for epoch in range(start_epoch, args.num_epochs):
 
 
@@ -474,10 +469,11 @@ def create_arg_parser():
     parser.add_argument('--num-pools', type=int, default=4, help='Number of U-Net pooling layers')
     parser.add_argument('--drop-prob', type=float, default=0.0, help='Dropout probability')
     parser.add_argument('--num-chans', type=int, default=32, help='Number of U-Net channels')
-
+    parser.add_argument('--cascade', default=5, type=int, help='no of cnn blocks in cascade')
+    
     parser.add_argument('--batch-size', default=16, type=int, help='Mini batch size')
     parser.add_argument('--num-epochs', type=int, default=50, help='Number of training epochs')
-    parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
+    parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate')
     parser.add_argument('--lr-step-size', type=int, default=40,
                         help='Period of learning rate decay')
     parser.add_argument('--lr-gamma', type=float, default=0.1,

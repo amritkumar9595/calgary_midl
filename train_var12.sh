@@ -2,20 +2,22 @@ BATCH_SIZE=1
 NUM_EPOCHS=150
 DEVICE='cuda:0'
 
-SAMPLE_RATE=1
+SAMPLE_RATE=2
                                             ## 12 channel data  TRAINING FROM SCRATCH ##
 
 #<<ACC_FACTOR_5x
+LR=0.001
+CASCADE=12
 RESUME='False'
 LOSS='SSIM'
 DROPOUT=0.0
 DATA_PATH="/media/student1/RemovableVolume/calgary/"
 ACC_FACTOR=5
 ACC='5x'
-EXP_DIR='/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/'${SAMPLE_RATE}'_volume'
-CHECKPOINT='/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/'${SAMPLE_RATE}'_volume/model.pt'
+EXP_DIR='/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/'${SAMPLE_RATE}'_volume/'${CASCADE}'_cascade/'${LR}'_lr'
+CHECKPOINT='/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet/12-channels/scratch/acc_5x/'${SAMPLE_RATE}'_volume/'${CASCADE}'_cascade/'${LR}'_lr/model.pt'
 
-python train_var12_scratch.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT} --dropout ${DROPOUT} --loss ${LOSS}
+python train_var12_scratch.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT} --dropout ${DROPOUT} --loss ${LOSS} --cascade ${CASCADE}
 #ACC_FACTOR_5x
 
 

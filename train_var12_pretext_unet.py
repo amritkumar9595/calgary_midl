@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader
 from common.args import Args
 from data import transforms as T
 from data.data_loader2 import SliceData , DataTransform
-from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture_nodc
+from models.models import  network, SSIM ,SensitivityModel, architecture_unet
 from tqdm import tqdm
 
 
@@ -119,7 +119,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
         
         # print("out",out.shape)
         # loss_cmplx = F.mse_loss(out,img_gt_np.cuda())
-        
+        # print("out",out.max(),"img_us_np=",img_us_np.max())
         if(args.loss == 'SSIM'):
             loss_cmplx_mse = F.mse_loss(out,img_us_np.cuda())
             loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_us_np.max().item()).unsqueeze(0).cuda())
@@ -362,7 +362,7 @@ def build_model(args):
     sens_chans = 8
     sens_pools = 4
 
-    model = architecture_nodc(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
+    model = architecture_unet(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
 
 
     return  model  
@@ -504,6 +504,7 @@ def create_arg_parser():
     parser.add_argument('--residual', type=str, default='False')
     parser.add_argument('--acceleration', type=int,help='Ratio of k-space columns to be sampled. 5x or 10x masks provided')
     parser.add_argument('--dropout', type=float,help='% of nodes in decoder to be dropped')
+    parser.add_argument('--cascade', default=12, type=int, help='no. of U-nets in cascade')
     
     return parser
 

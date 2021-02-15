@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader
 from common.args import Args
 from data import transforms as T
 from data.data_loader2 import SliceData , DataTransform
-from models.models import DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture
+from models.models import DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel, architecture, architecture_unet
 from tqdm import tqdm
 
 
@@ -44,7 +44,7 @@ def create_datasets(args,data_path):
     dev_data = SliceData(
         root=str(data_path) + '/Val',
         transform=DataTransform(),
-        no_of_vol=5,             #args.sample_rate,
+        no_of_vol=20,             #args.sample_rate,
         acceleration=args.acceleration
     )
     return train_data, dev_data
@@ -149,6 +149,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
 
         writer.add_scalar('TrainLoss_cmplx_ssim', loss_cmplx.item(), global_step + iter)
         writer.add_scalar('TrainLoss_cmplx_mse', loss_cmplx_mse.item(), global_step + iter)
+
         # wandb.log({"Train_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Train_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
         if iter % args.report_interval == 0:
@@ -171,6 +172,9 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
 
 
     losses_cmplx = []
+    losses_cmplx_ssim=[]
+    losses_cmplx_mse=[]
+
     start = time.perf_counter()
     with torch.no_grad():
 
@@ -209,13 +213,16 @@ def evaluate(args, epoch,  model ,   data_loader, writer):
             loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
             loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
           
-            
+
+        losses_cmplx_ssim.append(loss_cmplx_ssim.item())
+        losses_cmplx_mse.append(loss_cmplx_mse.item())
+
         losses_cmplx.append(loss_cmplx.item())
 
         # wandb.log({"Dev_Loss_cmplx_ssim": loss_cmplx_ssim.item(), "Dev_Loss_cmplx_mse": loss_cmplx_mse.item()})
 
-        writer.add_scalar('Dev_Loss_cmplx_ssim',loss_cmplx_ssim, epoch)
-        writer.add_scalar('Dev_Loss_cmplx_mse',loss_cmplx_mse, epoch)
+        writer.add_scalar('Dev_Loss_cmplx_ssim',np.mean(losses_cmplx_ssim), epoch)
+        writer.add_scalar('Dev_Loss_cmplx_mse',np.mean(losses_cmplx_mse), epoch)
         
     return  np.mean(losses_cmplx) , time.perf_counter() - start
 
@@ -356,7 +363,7 @@ def build_model(args):
     
     wacoeff = 0.1
     dccoeff = 0.1
-    cascade = 5   
+    cascade = args.cascade   
     sens_chans = 8
     sens_pools = 4
 
@@ -462,7 +469,8 @@ def create_arg_parser():
     parser.add_argument('--num-pools', type=int, default=4, help='Number of U-Net pooling layers')
     parser.add_argument('--drop-prob', type=float, default=0.0, help='Dropout probability')
     parser.add_argument('--num-chans', type=int, default=32, help='Number of U-Net channels')
-
+    parser.add_argument('--cascade', default=5, type=int, help='no of cnn blocks in cascade')
+    
     parser.add_argument('--batch-size', default=16, type=int, help='Mini batch size')
     parser.add_argument('--num-epochs', type=int, default=50, help='Number of training epochs')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')

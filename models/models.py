@@ -128,7 +128,7 @@ class UnetModel(nn.Module):
         else:
             return self.conv2(output)
         
-'''           
+          
 
 class DataConsistencyLayer(nn.Module):
 
@@ -450,7 +450,7 @@ class _NetG_lite(nn.Module):
         out = torch.add(out, residual)
 
         return out
-    
+'''    
 ## VS-Net architecture
     
 class dataConsistencyTerm(nn.Module):
@@ -543,6 +543,47 @@ class cnn_layer(nn.Module):
 
 
     
+class network_unet(nn.Module):
+    
+    def __init__(self, alfa=1, beta=1, cascades=5):
+        super(network_unet, self).__init__()
+        
+        self.cascades = cascades 
+        conv_blocks = []
+        dc_blocks = []
+        wa_blocks = []
+        
+        for i in range(cascades):
+            conv_blocks.append(NormUnet(18,4))  
+            dc_blocks.append(dataConsistencyTerm(alfa)) 
+            wa_blocks.append(weightedAverageTerm(beta)) 
+
+        self.conv_blocks = nn.ModuleList(conv_blocks)
+        self.dc_blocks = nn.ModuleList(dc_blocks)
+        self.wa_blocks = nn.ModuleList(wa_blocks)
+
+    def forward(self, x, k, m, c):
+
+        op=[]        
+        for i in range(self.cascades):
+
+            x_cnn = self.conv_blocks[i](x)
+
+            x_cnn = x_cnn.squeeze(0)
+            x = x.squeeze(0)
+
+            Sx, SS = self.dc_blocks[i].perform(x, k, m, c)
+            x = self.wa_blocks[i].perform(x + x_cnn, Sx, SS)
+
+            
+            op.append(x)
+            x = x.unsqueeze(0)
+            
+            
+
+        img_mag = T.rss(x.squeeze(0),m).float()
+        return img_mag , op
+
 class network(nn.Module):
     
     def __init__(self, alfa=1, beta=1, cascades=5):
@@ -554,7 +595,7 @@ class network(nn.Module):
         wa_blocks = []
         
         for i in range(cascades):
-            conv_blocks.append(cnn_layer())  
+            conv_blocks.append(cnn_layer())
             dc_blocks.append(dataConsistencyTerm(alfa)) 
             wa_blocks.append(weightedAverageTerm(beta)) 
 
@@ -574,6 +615,7 @@ class network(nn.Module):
  
         img_mag = T.rss(x,m).float()
         return img_mag , op
+
 
 
 
@@ -608,6 +650,46 @@ class network_nodc(nn.Module):
             op.append(x)
  
         img_mag = T.rss(x, m).float()
+        return img_mag , op
+
+class network_unet_nodc(nn.Module):
+    
+    def __init__(self, alfa=1, beta=1, cascades=5):
+        super(network_unet_nodc, self).__init__()
+        
+        self.cascades = cascades 
+        conv_blocks = []
+        dc_blocks = []
+        wa_blocks = []
+        
+        for i in range(cascades):
+            conv_blocks.append(NormUnet(18,4))  
+            dc_blocks.append(dataConsistencyTerm(alfa)) 
+            wa_blocks.append(weightedAverageTerm(beta)) 
+
+        self.conv_blocks = nn.ModuleList(conv_blocks)
+        self.dc_blocks = nn.ModuleList(dc_blocks)
+        self.wa_blocks = nn.ModuleList(wa_blocks)
+
+    def forward(self, x, k, m, c):
+
+        op=[]        
+        for i in range(self.cascades):
+
+            x_cnn = self.conv_blocks[i](x)
+
+            x_cnn = x_cnn.squeeze(0)
+            x = x.squeeze(0)
+
+            # print("x_cnn=",x_cnn.shape,"x=",x.shape)
+
+            Sx, SS = self.dc_blocks[i].perform(x, k, m, c)
+            x = self.wa_blocks[i].perform(x + x_cnn, Sx, SS)
+
+            op.append(x)
+            x = x.unsqueeze(0)
+ 
+        img_mag = T.rss(x.squeeze(0),m).float()
         return img_mag , op
     
 
@@ -648,9 +730,32 @@ class architecture(nn.Module):
         sens = self.model_sens(ksp_us, mask)
 
         img_us =  T.combine_all_coils(img_us.float().squeeze(0) , sens.float().squeeze(0)).unsqueeze(0)
-
+        # print("img_us",img_us.shape)
         out,outstack = self.model_vs(img_us,ksp_us,sens,mask)
+     
+        return out, outstack, sens
 
+class architecture_unet(nn.Module):
+
+    def __init__(self,dccoeff=0.1,wacoeff=0.1,cascade=5,sens_chans=8, sens_pools=4):
+        super(architecture_unet,self).__init__()
+        self.dccoeff = dccoeff
+        self.wacoeff = wacoeff
+        self.cascade = cascade
+        self.sens_chans = sens_chans
+        self.sens_pools = sens_pools
+
+        self.model_vs = network_unet(self.dccoeff, self.wacoeff, self.cascade)
+        self.model_sens = SensitivityModel(self.sens_chans, self.sens_pools)
+
+    def forward(self,img_us,ksp_us,mask):
+
+        sens = self.model_sens(ksp_us, mask)
+
+        img_us =  T.combine_all_coils(img_us.float().squeeze(0) , sens.float().squeeze(0)).unsqueeze(0).unsqueeze(0)
+        # print("img_us",img_us.shape)
+        out,outstack = self.model_vs(img_us,ksp_us,sens,mask)
+     
         return out, outstack, sens
 
 
@@ -677,29 +782,55 @@ class architecture_nodc(nn.Module):
 
         return out, outstack, sens
 
-
-class architecture_sens(nn.Module):
+class architecture_unet_nodc(nn.Module):
 
     def __init__(self,dccoeff=0.1,wacoeff=0.1,cascade=5,sens_chans=8, sens_pools=4):
-        super(architecture_nodc,self).__init__()
+        super(architecture_unet_nodc,self).__init__()
         self.dccoeff = dccoeff
         self.wacoeff = wacoeff
         self.cascade = cascade
         self.sens_chans = sens_chans
         self.sens_pools = sens_pools
 
-        self.model_vs = network_nodc(self.dccoeff, self.wacoeff, self.cascade)
+        self.model_vs = network_unet(self.dccoeff, self.wacoeff, self.cascade)
         self.model_sens = SensitivityModel(self.sens_chans, self.sens_pools)
 
     def forward(self,img_us,ksp_us,mask):
 
         sens = self.model_sens(ksp_us, mask)
 
-        img_us =  T.combine_all_coils(img_us.float().squeeze(0) , sens.float().squeeze(0)).unsqueeze(0)
+        img_us =  T.combine_all_coils(img_us.float().squeeze(0) , sens.float().squeeze(0)).unsqueeze(0).unsqueeze(0)
+        # print("img_us",img_us.shape)
+        out,outstack = self.model_vs(img_us,ksp_us,sens,mask)
+     
+        return out, outstack, sens
+
+
+class architecture_sens(nn.Module):
+
+    def __init__(self,dccoeff=0.1,wacoeff=0.1,cascade=5,sens_chans=8, sens_pools=4):
+        super(architecture_sens,self).__init__()
+        self.dccoeff = dccoeff
+        self.wacoeff = wacoeff
+        self.cascade = cascade
+        self.sens_chans = sens_chans
+        self.sens_pools = sens_pools
+        self.model_vs = network_unet(self.dccoeff, self.wacoeff, self.cascade)
+        self.model_sens = SensitivityModel(self.sens_chans, self.sens_pools)
+
+    def forward(self,img_us,ksp_us,mask):
+        
+        print("ksp_us",ksp_us.max())
+        sens = self.model_sens(ksp_us, mask)
+        print("sens",sens.max())
+        img_us =  T.combine_all_coils(img_us.float().squeeze(0) , sens.float().squeeze(0)).unsqueeze(0).unsqueeze(0)
 
         out,outstack = self.model_vs(img_us,ksp_us,sens,mask)
+        print("img_us",img_us.max())
+        out = T.rss(img_us, mask).float()
+      
 
-        return out, outstack, sens
+        return out.squeeze(0) , sens
 
 
 
@@ -788,7 +919,7 @@ class SSIM(nn.Module):
         return 1 - S.mean()
    
  ### Dautomap ####
-    
+'''    
 def init_noise_(tensor, init):
     with torch.no_grad():
         return getattr(torch.nn.init, init)(tensor) if init else tensor.zero_()
@@ -1150,7 +1281,7 @@ class dAUTOMAP(nn.Module):
 
 #         out = self.refinement_block(x)
 #         return out
-
+'''
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -1383,7 +1514,7 @@ class NormUnet(nn.Module):
         x = self.unnorm(x, mean, std)
         x = self.chan_complex_to_last_dim(x)
         return x
-
+'''
 class VarNetBlock(nn.Module):
     def __init__(self, model):
         super(VarNetBlock, self).__init__()
@@ -1405,7 +1536,7 @@ class VarNetBlock(nn.Module):
         return current_kspace - \
             soft_dc(current_kspace) - \
             sens_expand(self.model(sens_reduce(current_kspace)))
-            
+'''            
             
 class SensitivityModel(nn.Module):
     def __init__(self, chans, num_pools):
