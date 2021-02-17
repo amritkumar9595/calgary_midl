@@ -207,7 +207,7 @@ if __name__ == '__main__':
 
                                                 #########  12-channel   #######
 
-    # VOLUME = '10'
+    # VOLUME = '5'
     # ACTION = 'scratch'
 
     # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
@@ -215,29 +215,29 @@ if __name__ == '__main__':
     # out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track01/12-channel-R=5"
 
     
-    # VOLUME = '10'
-    # ACTION = 'finetune'
+    VOLUME = '5'
+    ACTION = 'finetune'
 
-    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
-    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + ACTION +"/acc_5x/0_layer/0.001_lr/" + VOLUME + "_volume/best_model.pt"
-    # out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track01/12-channel-R=5"
+    test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
+    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + ACTION +"/acc_5x/0_layer/0.001_lr/" + VOLUME + "_volume/best_model.pt"
+    out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track01/12-channel-R=5"
 
 
 
                                                 #########  32-channel  #######
-    # VOLUME = '10'
+    # VOLUME = '5'
     # ACTION = 'scratch'
     
     # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/"
     # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + ACTION +"/acc_5x/" + VOLUME + "_volume/12_cascade/0.001_lr/best_model.pt"
     # out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track02/32-channel-R=5"
 
-    VOLUME = '10'
-    ACTION = 'finetune'
+    # VOLUME = '5'
+    # ACTION = 'finetune'
 
-    test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/"
-    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + ACTION +"/acc_5x/0_layer/0.001_lr/" + VOLUME + "_volume/best_model.pt"
-    out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track02/32-channel-R=5"
+    # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/"
+    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + ACTION +"/acc_5x/0_layer/0.001_lr/" + VOLUME + "_volume/best_model.pt"
+    # out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track02/32-channel-R=5"
         
     
     main(test_data_path,model_path,out_dir)    
