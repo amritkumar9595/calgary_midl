@@ -493,19 +493,27 @@ def count_parameters(model):
     
 def rotation(data,deg):
     " takes input in numpy format"
-    
-    data = data.transpose(2,0,1)
+    data = data.numpy()
+    data = data[:,:,:,0] + 1j*data[:,:,:,1]
+    # print("data0",data.shape)
+    # deg = '270'
+    # print("deg=",deg)
+    # data = data.transpose(1,2,0)
+    # print("data1",data.shape)
     if deg == '0':
-        return data
+        ans =  data
     elif deg =='90':
-        return data.transpose(0,2,1)
+        ans =  data.transpose(0,2,1)
     elif deg =='180':
-        return np.fliplr(np.flipud(data))
+        ans =  np.fliplr(np.flipud(data))
     elif deg =='270':
-        return np.fliplr(np.flipud(data)).transpose(0,2,1)
+        ans =  np.fliplr(np.flipud(data)).transpose(0,2,1)
     else:
         raise ValueError('rotation should be 0, 90, 180, or 270 degrees')
-    
+    ans = to_tensor(ans) #.transpose()
+    # print("ans",ans.shape)
+    return ans     
+
 
 
 

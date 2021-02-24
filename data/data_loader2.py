@@ -85,34 +85,17 @@ class DataTransform:
     def __call__(self,ksp_cmplx,fname,sensitivity,acceleration):
         """
         Args:
-            kspace (numpy.array): Input k-space of the multi-coil data
+            ksp_cmplx (numpy.array): Input k-space of the multi-coil data
             fname (str): File name
-            sensitivity maps (numpy.array): ENLIVE sensitivity maps
+            sensitivity(numpy.array): ENLIVE sensitivity maps
             acceleartion: whether to train for 5x US ksp or 10x US kspace
 
         """
-    ## comment lines 89,90,91,92,93 
-        # fname = '/media/student1/RemovableVolume/calgary/12_channels_218_180/Train/e16971s3_P23040.7.100.h5' 
-        # with h5py.File(fname, 'r') as data:
-
-        #     ksp_cmplx = data['kspace'][()]
-        #     sensitivity = data['sensitivity'][()]
-    
-    
-    ## start from here    
-        
 
         sens_t = T.to_tensor(sensitivity)
         ksp_t = T.to_tensor(ksp_cmplx)
         ksp_t = ksp_t.permute(2,0,1,3)
-        # img_gt = T.ifft2(ksp_t)
-        # print("img_gt,sens_t",img_gt.shape,sens_t.shape)
-        # img_gt_sens = T.combine_all_coils(img_gt , sens_t)
-        
-        # img_gt_np = T.zero_filled_reconstruction(ksp_cmplx)
 
-
-        # img_gt_rss = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_t)))
         img_gt_np = T.root_sum_of_squares(T.complex_abs(T.ifft2_np(ksp_t)))
         
         
@@ -142,67 +125,16 @@ class DataTransform:
         mask = (torch.stack((mask,mask),dim=-1)).float()
         
         ksp_us = torch.where(mask == 0, torch.Tensor([0]), ksp_t)
-        
-        # img_us = T.ifft2(ksp_us)
-        # img_us_sens = T.combine_all_coils(img_us , sens_t)
-        
-        # ksp_us_np = ksp_us.numpy()
-        # ksp_us_cmplx = ksp_us_np[:,:,:,0] + 1j*ksp_us_np[:,:,:,1]
-        # ksp_us_cmplx = ksp_us_cmplx.transpose(1,2,0)
 
-        # img_us_cmplx = T.channel_wise_ifft(ksp_us_cmplx)
-        # img_us = T.to_tensor(img_us_cmplx).permute(2,0,1,3)
-        # img_us_np = T.zero_filled_reconstruction(ksp_us_cmplx)
-        # maxi = img_us_np.max().float()
-        
         img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2_np(ksp_us)))
         img_us = T.ifft2(ksp_us)
         img_us_rss = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_us)))
 
-        # img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2_np(ksp_us)))
-
-
-
-
-        # img_us = T.ifft2_np(ksp_us)
-        # img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2_np(ksp_us)))
-
-        
-
-
-
 
         maxi = img_us_rss.max().float()
- 
-        
-        
-        # img_us_np_ch = T.zero_filled_reconstruction(ksp_us_cmplx)
-        # img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_us)))
 
-        # maxi = T.zero_filled_reconstruction(ksp_us_cmplx).max()*100.0
-        
-        
-        # pha_gt = T.phase(img_gt_sens)
-        # pha_us = T.phase(img_us_sens) 
-        
-        # pha_gt = pha_gt + 3.1415927410125732
-        # pha_us = pha_us + 3.1415927410125732
-        
-        # mag_gt = T.complex_abs(img_gt_sens)
-        # mag_us = T.complex_abs(img_us_sens)
-        
-        # mag_gt_pad = T.pad(mag_gt,[256,256] )
-        # mag_us_pad = T.pad(mag_us,[256,256] )
-        
-        # pha_gt_pad = T.pad(pha_gt,[256,256] )
-        # pha_us_pad = T.pad(pha_us,[256,256] )
-        
-
-        # print(ksp_us.dtype,img_us.dtype,img_us_np.dtype,img_gt_np.dtype,maxi.dtype)
-        # return   ksp_us/img_us_sens.max(), ksp_t/img_us_sens.max() ,  img_us_sens/img_us_sens.max(), img_gt_sens/img_us_sens.max() , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() , sens_t , mask ,img_us_sens.max(),img_us_np.max(),fname
-        # print("img_us",img_us.shape)
         return   ksp_us/maxi ,  img_us/maxi  , img_us_rss/maxi , 100.0*img_us_np/maxi , 100.0*img_gt_np/maxi ,sens_t, mask ,maxi,fname
-        # return   ksp_us, ksp_t ,  img_us, img_gt , img_us_np , img_gt_np , sens_t , mask ,img_us.max(),img_us_np.max(),fname
+
 
 
 
@@ -243,90 +175,53 @@ class DataTransform_rotnet:
         # mask = (torch.stack((mask,mask),dim=-1)).float()
         
         sens_t = T.to_tensor(sensitivity)
+        ksp_t = T.to_tensor(ksp_cmplx)
+        ksp_t = ksp_t.permute(2,0,1,3)
 
-        degrees = ('0' , '90' , '180' , '270')
-
-        randint = random.randint(0,3)                   #to get a random rotation [0,90,180,270] everytime ! 
-        deg = degrees[randint]
-
-        ksp_cmplx_rot = T.rotation(ksp_cmplx,deg).transpose(1,2,0)
-        maxi = T.zero_filled_reconstruction(ksp_cmplx_rot).max()*100.0
+        img_gt_rss = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_t)))
         
-        mask_sampling = ~( np.abs(ksp_cmplx_rot).sum( axis = (-1) ) == 0)
-        mask = 1.0*mask_sampling
+        # maxi = T.zero_filled_reconstruction(ksp_cmplx_rot).max()*100.0
+        if acceleration == 5:
+
+            if ksp_t.shape[2]==170:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R5_218x170.npy")
+            elif ksp_t.shape[2]==174:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R5_218x174.npy")
+            elif ksp_t.shape[2]==180:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R5_218x180.npy")
+        
+        elif acceleration == 10:
+
+            if ksp_t.shape[2]==170:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R10_218x170.npy")
+            elif ksp_t.shape[2]==174:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R10_218x174.npy")
+            elif ksp_t.shape[2]==180:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R10_218x180.npy")
+        
+        
+
+        randint = random.randint(0,99)                   #to get a random mask everytime ! 
+        mask = sp_r5[randint]
         mask = torch.from_numpy(mask)
         mask = (torch.stack((mask,mask),dim=-1)).float()
 
-
-        ksp_t = T.to_tensor(ksp_cmplx_rot)
-        ksp_t = ksp_t.permute(2,0,1,3)
-        
-        img_us = T.ifft2(ksp_t)
-        # print("img_gt,sens_t",img_gt.shape,sens_t.shape)
-        # img_gt_sens = T.combine_all_coils(img_gt , sens_t)
-        
-        # img_gt_np = T.zero_filled_reconstruction(ksp_cmplx)
-        img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_t)))
-        
-        
-        # if acceleration == 5:
-
-        #     if ksp_t.shape[2]==170:
-        #         sp_r5 = np.load("/home/ubuntu/volume1/MIDL-challenge/Data2/poisson_sampling/R5_218x170.npy")
-        #     elif ksp_t.shape[2]==174:
-        #         sp_r5 = np.load("/home/ubuntu/volume1/MIDL-challenge/Data2/poisson_sampling/R5_218x174.npy")
-        #     elif ksp_t.shape[2]==180:
-        #         sp_r5 = np.load("/home/ubuntu/volume1/MIDL-challenge/Data2/poisson_sampling/R5_218x180.npy")
-        
-        # elif acceleration == 10:
-
-        #     if ksp_t.shape[2]==170:
-        #         sp_r5 = np.load("/home/ubuntu/volume1/MIDL-challenge/Data2/poisson_sampling/R10_218x170.npy")
-        #     elif ksp_t.shape[2]==174:
-        #         sp_r5 = np.load("/home/ubuntu/volume1/MIDL-challenge/Data2/poisson_sampling/R10_218x174.npy")
-        #     elif ksp_t.shape[2]==180:
-        #         sp_r5 = np.load("/home/ubuntu/volume1/MIDL-challenge/Data2/poisson_sampling/R10_218x180.npy")
-        
-        
-
-
+        ksp_us = torch.where(mask == 0, torch.Tensor([0]), ksp_t)
 
         
-        # ksp_us = torch.where(mask == 0, torch.Tensor([0]), ksp_t)
-        # ksp_us = ksp_t
-        
-        # img_us = T.ifft2(ksp_us)
-        # img_us_sens = T.combine_all_coils(img_us , sens_t)
-        
-        # ksp_us_np = ksp_us.numpy()
-        # ksp_us_cmplx = ksp_us_np[:,:,:,0] + 1j*ksp_us_np[:,:,:,1]
-        # ksp_us_cmplx = ksp_us_cmplx.transpose(1,2,0)
-        
-        
-        
-        # # img_us_np = T.zero_filled_reconstruction(ksp_us_cmplx)
-        # img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_us)))
-        
-        
-        # pha_gt = T.phase(img_gt_sens)
-        # pha_us = T.phase(img_us_sens) 
-        
-        # pha_gt = pha_gt + 3.1415927410125732
-        # pha_us = pha_us + 3.1415927410125732
-        
-        # mag_gt = T.complex_abs(img_gt_sens)
-        # mag_us = T.complex_abs(img_us_sens)
-        
-        # mag_gt_pad = T.pad(mag_gt,[256,256] )
-        # mag_us_pad = T.pad(mag_us,[256,256] )
-        
-        # pha_gt_pad = T.pad(pha_gt,[256,256] )
-        # pha_us_pad = T.pad(pha_us,[256,256] )
-        
+        degrees = ('0' , '90' , '180' , '270')
+        randint = random.randint(0,3)                   #to get a random rotation [0,90,180,270] everytime ! 
+        deg = degrees[randint]
 
-        
-        # return   ksp_us/img_us_sens.max(), ksp_t/img_us_sens.max() ,  img_us_sens/img_us_sens.max(), img_gt_sens/img_us_sens.max() , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() , sens_t , mask ,img_us_sens.max(),img_us_np.max(),fname
-        # print("randint=",randint)
+        ksp_us = T.rotation(ksp_us,deg) #.transpose(1,2,0)
 
-        return   ksp_t/maxi , img_us/maxi,  img_us_np/maxi , randint ,   mask , sens_t ,  maxi , fname
+        mask = T.rotation(mask.unsqueeze(0),deg).squeeze(0)
+
+        img_us = T.ifft2(ksp_us)
+
+        img_us_rss = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_us)))
+        maxi = img_us_rss.max().float()
+
+
+        return   ksp_us/maxi , img_us/maxi,  img_us_rss/maxi , img_gt_rss/maxi ,  randint ,   mask , sens_t ,  maxi , fname
         # return   ksp_us, ksp_t ,  img_us, img_gt , img_us_np , img_gt_np , sens_t , mask ,img_us.max(),img_us_np.max(),fname

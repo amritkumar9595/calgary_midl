@@ -122,7 +122,7 @@ def train_epoch(args, epoch,model, data_loader,optimizer, writer):
             loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
         else:
             loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
-            loss_cmplx_ssim =  ssim_loss(out, img_us_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
+            loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
 
         
         

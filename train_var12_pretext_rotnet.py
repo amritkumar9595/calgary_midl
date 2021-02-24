@@ -10,7 +10,7 @@ import pathlib
 import random
 import shutil
 import time
-import wandb
+# import wandb
 import os 
 import numpy as np
 import torch
@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader
 from common.args import Args
 from data import transforms as T
 from data.data_loader2 import SliceData , DataTransform_rotnet
-from models.models import UnetModel,DataConsistencyLayer , _NetG_lite , network, SSIM ,SensitivityModel,classifier,architecture
+from models.models import SSIM ,SensitivityModel,classifier,architecture_unet
 from tqdm import tqdm
 import torch.nn as nn
 
@@ -37,39 +37,38 @@ logger = logging.getLogger(__name__)
 def create_datasets(args,data_path):
 
     train_data = SliceData(
-        root=str(data_path) ,
+        root=str(data_path) + '/Train',
         transform=DataTransform_rotnet(),
-        sample_rate=args.sample_rate,
+        no_of_vol=args.sample_rate,
         acceleration=args.acceleration
     )
-    # dev_data = SliceData(
-    #     root=str(data_path) + '/Val',
-    #     transform=DataTransform_rotnet(),
-    #     sample_rate=args.sample_rate,
-    #     acceleration=args.acceleration
-    # )
-    return train_data
+    dev_data = SliceData(
+        root=str(data_path) + '/Val',
+        transform=DataTransform_rotnet(),
+        no_of_vol= 20,                      #args.sample_rate, #1.0
+        acceleration=args.acceleration
+    )
+    return dev_data, train_data
 
 
 def create_data_loaders(args,data_path):
-    train_data = create_datasets(args,data_path)
-    # display_data = [dev_data[i] for i in range(0, len(dev_data))]
-    display_data = [train_data[i] for i in range(0, len(train_data))]
+    dev_data, train_data = create_datasets(args,data_path)
+    display_data = [dev_data[i] for i in range(0, len(dev_data) // 16)]
  
     train_loader = DataLoader(
         dataset=train_data,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=0,
-        pin_memory=True,
+        num_workers=6,
+        pin_memory=False,
     )
 
-    # dev_loader = DataLoader(
-    #     dataset=dev_data,
-    #     batch_size=args.batch_size,
-    #     num_workers=8,
-    #     pin_memory=True,
-    # )
+    dev_loader = DataLoader(
+        dataset=dev_data,
+        batch_size=args.batch_size,
+        num_workers=6,
+        pin_memory=False,
+    )
     display_loader = DataLoader(
         dataset=display_data,
         batch_size=1,
@@ -78,22 +77,22 @@ def create_data_loaders(args,data_path):
         pin_memory=False,
     )
     
-    return train_loader , display_loader
+    return train_loader , dev_loader ,  display_loader
 
 
-def train_epoch(args, epoch,model, model_cla, data_loader,optimizer_vs,criterion,writer):
+def train_epoch(args, epoch,model, model_cla, data_loader,optimizer,criterion,writer):
 
     # print("entering training....")
 
     model.train()
 
-    avg_loss_cmplx = 0.
+    avg_loss_cmplx = 0.0
     start_epoch = start_iter = time.perf_counter()
     global_step = epoch * len(data_loader)
     
     for iter, data in enumerate(tqdm(data_loader)):
        
-        ksp_us , img_us ,  img_us_np , label , mask , sens_ori , maxi , fname = data
+        ksp_us , img_us ,  img_us_np , img_gt_np,  label , mask , sens_ori , maxi , fname = data
 
         # input_kspace = input_kspace.to(args.device)
         # inp_mag = mag_us.unsqueeze(1).to(args.device)
@@ -106,7 +105,7 @@ def train_epoch(args, epoch,model, model_cla, data_loader,optimizer_vs,criterion
         mask = mask.to(args.device)
         img_us = img_us.to(args.device)
         # img_gt = img_gt.to(args.device)
-        img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
+        # img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
         label = label.to(args.device)
 
         
@@ -116,6 +115,8 @@ def train_epoch(args, epoch,model, model_cla, data_loader,optimizer_vs,criterion
         # print("fname",fname)
         # print("img_us,ksp_us,sens,img_gt_np",img_us.max(),ksp_us.max(),sens.max(),img_gt_np.max())
         # print("img-us",img_us.shape)
+        # print("ksp-us",ksp_us.shape)
+        # print("mask",mask.shape)
         out,_,_ = model(img_us,ksp_us,mask)
         # print("out",out.shape)
         pred = model_cla(out)
@@ -135,15 +136,15 @@ def train_epoch(args, epoch,model, model_cla, data_loader,optimizer_vs,criterion
         
         
           
-        optimizer_vs.zero_grad()
+        optimizer.zero_grad()
 
         loss.backward()
 
-        optimizer_vs.step()
+        optimizer.step()
 
         avg_loss = 0.99 * avg_loss + 0.01 * loss.item() if iter > 0 else loss.item()
 
-        writer.add_scalar('Train_Loss_rotnet', loss.item(), global_step + iter)
+        writer.add_scalar('Train_Loss', loss.item(), global_step + iter)
         # writer.add_scalar('TrainLoss_cmplx_mse', loss_cmplx_mse.item(), global_step + iter)
         # wandb.log({"Train_Loss_rotnet": loss.item()})
 
@@ -161,51 +162,52 @@ def train_epoch(args, epoch,model, model_cla, data_loader,optimizer_vs,criterion
     return avg_loss ,  time.perf_counter() - start_epoch
 
 
-# def evaluate(args, epoch,  model_vs ,model_sens,  data_loader , criterion):
+def evaluate(args, epoch,  model ,model_cla,  data_loader , criterion, writer):
 
-#     model.eval()
+    model.eval()
 
-#     losses_cmplx = []
-#     start = time.perf_counter()
-#     with torch.no_grad():
+    losses = []
+    start = time.perf_counter()
+    with torch.no_grad():
 
-#         for iter, data in enumerate(tqdm(data_loader)):
+        for iter, data in enumerate(tqdm(data_loader)):
             
-#             ksp_us , img_us_np , label , mask , maxi , fname = data
+            ksp_us , img_us ,  img_us_np , img_gt_np,  label , mask , sens_ori , maxi , fname = data
 
             
-#             # inp_mag = mag_us.unsqueeze(1).to(args.device)
-#             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
-#             # inp_pha = pha_us.unsqueeze(1).to(args.device)
-#             # tgt_pha = pha_gt.unsqueeze(1).to(args.device)
-#             ksp_us = ksp_us.to(args.device)
-#             # sens = sens.to(args.device)
-#             mask = mask.to(args.device)
-#             # img_gt = img_gt.to(args.device)
-#             img_us = img_us.to(args.device)
-#             img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
+            # inp_mag = mag_us.unsqueeze(1).to(args.device)
+            # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
+            # inp_pha = pha_us.unsqueeze(1).to(args.device)
+            # tgt_pha = pha_gt.unsqueeze(1).to(args.device)
+            ksp_us = ksp_us.to(args.device)
+            # sens = sens.to(args.device)
+            mask = mask.to(args.device)
+            # img_gt = img_gt.to(args.device)
+            img_us = img_us.to(args.device)
+            label = label.to(args.device)
+            # img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
 
-#             out,_,_ = model(img_us,ksp_us,sens,mask)
-#             pred = model_cla(out)
+            out,_,_ = model(img_us,ksp_us,mask)
+            pred = model_cla(out)
 
         
-#         # if(args.loss == 'SSIM'):
-#         #     loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
-#         #     loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
-#         # else:
-#         #     loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
-#         #     loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
+        # if(args.loss == 'SSIM'):
+        #     loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
+        #     loss_cmplx = loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
+        # else:
+        #     loss_cmplx =  loss_cmplx_mse = F.mse_loss(out,img_gt_np.cuda())
+        #     loss_cmplx_ssim =  ssim_loss(out, img_gt_np,torch.tensor(img_gt_np.max().item()).unsqueeze(0).cuda())
           
-#             loss = criterion(outputs, labels)
+            loss = criterion(pred, label)
 
-#             losses.append(loss.item())
+            losses.append(loss.item())
 
-#         # wandb.log({"Dev_Loss_rotnet": loss.item() })
+        # wandb.log({"Dev_Loss_rotnet": loss.item() })
 
-#             writer.add_scalar('Dev_Loss_rotnet',loss, epoch)
-#         # writer.add_scalar('Dev_Loss_cmplx_mse',loss_cmplx_mse, epoch)
+    writer.add_scalar('Dev_Loss',np.mean(losses), epoch)
+        # writer.add_scalar('Dev_Loss_cmplx_mse',loss_cmplx_mse, epoch)
         
-#     return  np.mean(losses) , time.perf_counter() - start
+    return  np.mean(losses) , time.perf_counter() - start
 
 
 
@@ -226,11 +228,8 @@ def visualize(args, epoch,  model, model_cla, data_loader,writer):
     with torch.no_grad():
 
         for iter, data in enumerate(data_loader):
-            # ksp_us/img_us_sens.max(), ksp_t/img_us_sens.max() ,  img_us_sens/img_us_sens.max(), img_gt_sens/img_us_sens.max() , img_us_np/img_us_np.max() , img_gt_np/img_us_np.max() , sens_t , mask ,img_us_sens.max(),img_us_np.max(),fname
 
-            img_list=[]
-
-            ksp_us , img_us ,  img_us_np , label , mask ,sens_ori ,  maxi , fname = data
+            ksp_us , img_us ,  img_us_np , img_gt_np,  label , mask , sens_ori , maxi , fname = data
             
             # inp_mag = mag_us.unsqueeze(1).to(args.device)
             # tgt_mag = mag_gt.unsqueeze(1).to(args.device)
@@ -241,7 +240,7 @@ def visualize(args, epoch,  model, model_cla, data_loader,writer):
             mask = mask.to(args.device)
             # img_gt = img_gt.to(args.device)
             img_us = img_us.to(args.device)
-            img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
+            # img_us_np = img_us_np.unsqueeze(0).to(args.device).float()
 
             # out,_,_ = model(img_us,ksp_us,sens,mask)
             # pred = model_cla(out)
@@ -249,8 +248,9 @@ def visualize(args, epoch,  model, model_cla, data_loader,writer):
   
             out,out_stack,sens= model(img_us,ksp_us,mask)
             # print("out",out.shape)
-            # pred = model_cla(out)
-            # print("img_us",img_us.shape)
+            pred = model_cla(out)
+            print("pred=",torch.argmax(pred),"true_label=",label)
+
 
             # print("shape",out_stack[0].shape,out_stack[1].shape,out_stack[1].shape)
 
@@ -285,6 +285,8 @@ def visualize(args, epoch,  model, model_cla, data_loader,writer):
             # wandb.Image(norm_image(img_gt_np.unsqueeze(0)), caption="GT-Image"),wandb.Image(norm_image(error_cmplx), caption="Error")]})
             # save_image(img_gt_np,'Target')
             
+            save_image(img_gt_np,'GT-image_rss')
+            save_image(img_us_np,'US-image_rss')
             save_image(img_us_cmplx_abs,'US-image')
             save_image(sens_cmplx_abs,'sens')
             save_image(sens_cmplx_abs_ori,'sens_map_from_enlive')
@@ -303,6 +305,7 @@ def visualize(args, epoch,  model, model_cla, data_loader,writer):
             
             out_cmplx=out_stack[1]
             out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
+            print('out_cmplx_abs',out_cmplx_abs.shape)
             out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
             save_image(out_cmplx_abs, 'Recons1')
             
@@ -311,12 +314,12 @@ def visualize(args, epoch,  model, model_cla, data_loader,writer):
             out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
             save_image(out_cmplx_abs, 'Recons2')
             
-            out_cmplx=out_stack[3]
+            out_cmplx=out_stack[-2]
             out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
             save_image(out_cmplx_abs, 'Recons3')
             
-            out_cmplx=out_stack[4]
+            out_cmplx=out_stack[-1]
             out_cmplx_abs = (torch.sqrt(out_cmplx[:,:,:,0]**2 + out_cmplx[:,:,:,1]**2)).unsqueeze(1).to(args.device)
             out_cmplx_abs  = T.pad(out_cmplx_abs[0,0,:,:],[256,256]).unsqueeze(0).unsqueeze(1).to(args.device)  
             save_image(out_cmplx_abs, 'Recons4')
@@ -326,7 +329,7 @@ def visualize(args, epoch,  model, model_cla, data_loader,writer):
 
 
 
-def save_model(args, exp_dir, epoch, model,model_cla, optimizer_vs,best_dev_loss_cmplx,is_new_best_cmplx):
+def save_model(args, exp_dir, epoch, model,model_cla, optimizer,best_dev_loss_cmplx,is_new_best_cmplx):
 
     torch.save(
         {
@@ -334,7 +337,7 @@ def save_model(args, exp_dir, epoch, model,model_cla, optimizer_vs,best_dev_loss
             'args': args,
             'model':model.state_dict(),
             'model_cla':model_cla.state_dict(),
-            'optimizer_vs': optimizer_vs.state_dict(), 
+            'optimizer': optimizer.state_dict(), 
             'best_dev_loss_cmplx': best_dev_loss_cmplx,
             'exp_dir': exp_dir
         },
@@ -349,11 +352,12 @@ def build_model(args):
     
     wacoeff = 0.1
     dccoeff = 0.1
-    cascade = 5   
+    cascade = 12 #args.cascade   
     sens_chans = 8
     sens_pools = 4
 
-    model = architecture(dccoeff, wacoeff, cascade,sens_chans, sens_pools).to(args.device)
+    model = architecture_unet(dccoeff, wacoeff, cascade,sens_chans, sens_pools).cuda()
+
     model_cla = classifier().to(args.device)
 
     return  model  , model_cla
@@ -362,20 +366,21 @@ def load_model(checkpoint_file):
 
     checkpoint = torch.load(checkpoint_file)
     args = checkpoint['args']
-    model_vs = build_model(args)
+    model,model_cla = build_model(args)
     if args.data_parallel:
 
-        model_vs = torch.nn.DataParallel(model_vs)
+        model = torch.nn.DataParallel(model)
+        model_cla = torch.nn.DataParallel(model_cla)
 
-    model_vs.load_state_dict(checkpoint['model_vs'])
+    model.load_state_dict(checkpoint['model'])
+    
+    optimizer = build_optim(list(model.parameters()) + list(model_cla.parameters()),args.lr,args.weight_decay)
 
-    optimizer_vs = build_optim(args, model_vs.parameters())
-
-    optimizer_vs.load_state_dict(checkpoint['optimizer_vs'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
     
     
     
-    return checkpoint,  model_vs ,   optimizer_vs
+    return checkpoint,  model , model_cla ,   optimizer
 
 
 def build_optim(params,lr,weight_decay):
@@ -386,11 +391,11 @@ def build_optim(params,lr,weight_decay):
 
 def main(args):
     args.exp_dir.mkdir(parents=True, exist_ok=True)
-    writer = SummaryWriter(log_dir=args.exp_dir / 'vs_summary')
+    writer = SummaryWriter(log_dir=args.exp_dir / 'summary')
 
     if args.resume == 'True':
 
-        checkpoint, model_vs,optimizer_vs = load_model(args.checkpoint)
+        checkpoint, model, model_cla, optimizer = load_model(args.checkpoint)
         args = checkpoint['args']
         best_dev_loss_cmplx = checkpoint['best_dev_loss_cmplx']
         start_epoch = checkpoint['epoch']
@@ -400,18 +405,13 @@ def main(args):
         
         model ,model_cla = build_model(args)
 
-        # wandb.watch(model)
-        # wandb.watch(model_cla)
-
-
-
         if args.data_parallel:
 
             model = torch.nn.DataParallel(model)
             model_cla = torch.nn.DataParallel(model_cla)
 
 
-        optimizer_vs = build_optim(list(model.parameters()) + list(model_cla.parameters()),args.lr,args.weight_decay)
+        optimizer = build_optim(list(model.parameters()) + list(model_cla.parameters()),args.lr,args.weight_decay)
 
         best_dev_loss_cmplx = 1e9
         start_epoch = 0
@@ -423,38 +423,35 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss()
 
-    print("ROTATION as a PRETEXT task VarNet with 32-channels data")
+    print("ROTATION as a PRETEXT task VarNet with 12-channels data")
 
-    train_loader,  display_loader = create_data_loaders(args,args.data_path)  
-    print("dataloaders for 32 channels data readdy")  
+    train_loader, dev_loader, display_loader = create_data_loaders(args,args.data_path)  
+    print("dataloaders for 12 channels data readdy")  
 
-    scheduler_vs = torch.optim.lr_scheduler.StepLR(optimizer_vs, args.lr_step_size, args.lr_gamma)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_step_size, args.lr_gamma)
 
     print("Parameters in Model=",T.count_parameters(model)/1000000,"M")
     print("Parameters in classifier model=",T.count_parameters(model_cla)/1000000,"M")
 
-    print("Total parameters in VS-Model + classifier =",T.count_parameters(model)/1000000+T.count_parameters(model_cla)/1000000,"M")
+    print("Total parameters in Model + classifier =",T.count_parameters(model)/1000000+T.count_parameters(model_cla)/1000000,"M")
 
 
     for epoch in range(start_epoch, args.num_epochs):
 
-
-
-
-        train_loss_cmplx, train_time = train_epoch(args, epoch,  model ,model_cla , train_loader, optimizer_vs, criterion, writer)
-        dev_loss_cmplx = train_loss_cmplx
-        # dev_loss_cmplx , dev_time = evaluate(args, epoch, model , model_cla,  dev_loader, criterion)
+        train_loss_cmplx, train_time = train_epoch(args, epoch,  model ,model_cla , train_loader, optimizer, criterion, writer)
+        dev_loss_cmplx , dev_time = evaluate(args, epoch, model , model_cla,  dev_loader, criterion, writer)
         visualize(args, epoch, model , model_cla,  display_loader, writer)
 
-        scheduler_vs.step(epoch)
+        scheduler.step(epoch)
         
         is_new_best_cmplx = dev_loss_cmplx < best_dev_loss_cmplx
 
         best_dev_loss_cmplx = min(best_dev_loss_cmplx, dev_loss_cmplx)
                 
-        save_model(args, args.exp_dir, epoch, model, model_cla, optimizer_vs, best_dev_loss_cmplx ,is_new_best_cmplx)
+        save_model(args, args.exp_dir, epoch, model, model_cla, optimizer, best_dev_loss_cmplx ,is_new_best_cmplx)
         logging.info(
-            f'Epoch = [{epoch:4d}/{args.num_epochs:4d}]  TrainLoss_cmplx = {train_loss_cmplx:.4g}',
+            f'Epoch = [{epoch:4d}/{args.num_epochs:4d}]  TrainLoss_cmplx = {train_loss_cmplx:.4g}  '
+            f'DevLoss_cmplx = {dev_loss_cmplx:.4g} TrainTime = {train_time:.4f}s DevTime = {dev_time:.4f}s',
         )
 
         
@@ -494,6 +491,7 @@ def create_arg_parser():
     parser.add_argument('--checkpoint', type=str,help='Path to an existing checkpoint. Used along with "--resume"')
 
     parser.add_argument('--acceleration', type=int,help='Ratio of k-space columns to be sampled. 5x or 10x masks provided')
+    parser.add_argument('--cascade', default=12, type=int, help='no. of U-nets in cascade')
 
     
     return parser
