@@ -39,7 +39,7 @@ def create_datasets(args,data_path):
     dev_data = SliceData(
         root=str(data_path) + '/Val',
         transform=DataTransform(),
-        no_of_vol= 2,                      #args.sample_rate, #1.0
+        no_of_vol= 20,                      #args.sample_rate, #1.0
         acceleration=args.acceleration
     )
     return dev_data, train_data

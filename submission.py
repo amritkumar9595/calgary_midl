@@ -161,7 +161,7 @@ def build_model(args):
     
     wacoeff = 0.1
     dccoeff = 0.1
-    cascade = args.cascade   
+    cascade = 12 #args.cascade   
     sens_chans = 8
     sens_pools = 4
 
@@ -216,11 +216,12 @@ if __name__ == '__main__':
 
     
     VOLUME = '47'
-    ACTION = 'finetune'
+    ACTION = 'finetune/autoencoder'
     PRETEXT = 'rotnet'
+    LAYER='0'
 
     test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
-    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + PRETEXT + ACTION +"/acc_5x/0_layer/0.001_lr/" + VOLUME + "_volume/best_model.pt"
+    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + PRETEXT + "/" + ACTION +"/acc_5x/" + LAYER +"_layer/0.001_lr/" + VOLUME + "_volume/best_model.pt"
     out_dir = "/media/student1/RemovableVolume/calgary_new/" + PRETEXT + "/" + VOLUME +"_volume/Track01/12-channel-R=5"
 
 
@@ -233,12 +234,12 @@ if __name__ == '__main__':
     # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + ACTION +"/acc_5x/" + VOLUME + "_volume/12_cascade/0.001_lr/best_model.pt"
     # out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track02/32-channel-R=5"
 
-    # VOLUME = '47'
+    # VOLUME = '5'
     # ACTION = 'finetune'
     # PRETEXT = 'rotnet'
 
     # test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_32_channel/Test-R=5/"
-    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + PRETEXT + ACTION +"/acc_5x/0_layer/0.001_lr/" + VOLUME + "_volume/best_model.pt"
+    # model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + PRETEXT + "/" + ACTION +"/acc_5x/0_layer/0.001_lr/" + VOLUME + "_volume/best_model.pt"
     # out_dir = "/media/student1/RemovableVolume/calgary_new/" + PRETEXT + "/" + VOLUME + "_volume/Track02/32-channel-R=5"
         
     

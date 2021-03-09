@@ -386,6 +386,25 @@ def load_model(checkpoint_file):
     
     return checkpoint,  model ,   optimizer
 
+def load_model_pretext(checkpoint_file):
+
+    checkpoint = torch.load(checkpoint_file)
+    # args = checkpoint['args']
+    model = build_model(args)
+    if args.data_parallel:
+
+        model = torch.nn.DataParallel(model)
+
+    model.load_state_dict(checkpoint['model'])
+
+    # optimizer = build_optim(model.parameters(),args.lr,args.weight_decay)
+
+    # optimizer.load_state_dict(checkpoint['optimizer'])
+    
+    
+    
+    return  model 
+
 
 def build_optim(params,lr,weight_decay):
     optimizer = torch.optim.Adam(params, lr, weight_decay=weight_decay)
@@ -407,28 +426,35 @@ def main(args):
         start_epoch = checkpoint['epoch']
 
         del checkpoint
-    else:
+
+    if (args.pretext != 'autoencoder'):
         
-        model  = build_model(args)
-        # wandb.watch(model_vs)
-        # wandb.watch(model_sens)
-
-
-
+        model  = load_model_pretext(args.checkpoint_pretext)
         if args.data_parallel:
 
             model = torch.nn.DataParallel(model)
+        optimizer = build_optim((model.parameters()),args.lr,args.weight_decay)
 
+        best_dev_loss_cmplx = 1e9
+        start_epoch = 0
 
+        print("Autoencoder pretext training on top of",args.pretext,"pretext")
+
+    if (args.pretext == 'autoencoder'):
+        
+        model  = build_model(args.checkpoint_pretext)
+        if args.data_parallel:
+
+            model = torch.nn.DataParallel(model)
 
         optimizer = build_optim((model.parameters()),args.lr,args.weight_decay)
 
         best_dev_loss_cmplx = 1e9
         start_epoch = 0
         
-    logging.info(args)
+    # logging.info(args)
 
-    logging.info(model)
+    # logging.info(model)
 
     
     print("PRETEXT Training of VarNet from  with 12-channels data, using",args.loss,"  taking US image as GT")
@@ -499,6 +525,8 @@ def create_arg_parser():
     parser.add_argument('--data-path', type=pathlib.Path,help='Path to the dataset')
     
     parser.add_argument('--checkpoint', type=str,help='Path to an existing checkpoint. Used along with "--resume"')
+    parser.add_argument('--pretext', type=str,default='autoencoder')
+    parser.add_argument('--checkpoint-pretext', type=str,help='Path to an existing pretrained model', default=None)
 
     parser.add_argument('--loss', type=str, default='SSIM')
     parser.add_argument('--residual', type=str, default='False')
