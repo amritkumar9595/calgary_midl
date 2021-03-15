@@ -548,7 +548,7 @@ class network_unet(nn.Module):
     def __init__(self, alfa=1, beta=1, cascades=5):
         super(network_unet, self).__init__()
         
-        self.cascades = cascades 
+        self.cascades = cascades
         conv_blocks = []
         dc_blocks = []
         wa_blocks = []
@@ -566,7 +566,6 @@ class network_unet(nn.Module):
 
         op=[]        
         for i in range(self.cascades):
-
             x_cnn = self.conv_blocks[i](x)
 
             x_cnn = x_cnn.squeeze(0)
@@ -580,8 +579,18 @@ class network_unet(nn.Module):
             x = x.unsqueeze(0)
             
             
+            
 
         img_mag = T.rss(x.squeeze(0),m).float()
+        # x = x.squeeze(0)
+        # x = x.permute(0,3,1,2)
+        # print("x=",x.shape)
+        # print("x=",x.shape)
+        # x = x.permute(0,3,1,2)
+        # x, mean, std = self.norm(x)
+        # x, pad_sizes = self.pad(x)
+        # img_mag = self.Unet_end(x)
+        # print("img_mag=",img_mag.shape)
         return img_mag , op
 
 class network(nn.Module):
@@ -624,7 +633,8 @@ class network_nodc(nn.Module):
     def __init__(self, alfa=1, beta=1, cascades=5):
         super(network_nodc, self).__init__()
         
-        self.cascades = cascades 
+        self.cascades = cascades
+         
         conv_blocks = []
         dc_blocks = []
         wa_blocks = []
@@ -650,6 +660,7 @@ class network_nodc(nn.Module):
             op.append(x)
  
         img_mag = T.rss(x, m).float()
+
         return img_mag , op
 
 class network_unet_nodc(nn.Module):
@@ -1376,7 +1387,7 @@ class UnetModel(nn.Module):
         computing and computer-assisted intervention, pages 234–241. Springer, 2015.
     """
 
-    def __init__(self, in_chans, out_chans, chans, num_pool_layers, drop_prob):
+    def __init__(self, in_chans, out_chans, chans, num_pool_layers, drop_prob=0):
         """
         Args:
             in_chans (int): Number of channels in the input to the U-Net model.
@@ -1423,7 +1434,6 @@ class UnetModel(nn.Module):
         """
         stack = []
         output = input
-
         # Apply down-sampling layers
         for i, layer in enumerate(self.down_sample_layers):
             output = layer(output)
@@ -1506,6 +1516,7 @@ class NormUnet(nn.Module):
         return x[..., h_pad[0]:h_mult - h_pad[1], w_pad[0]:w_mult - w_pad[1]]
 
     def forward(self, x):
+        # print("norm_unet=",x.shape)
         x = self.complex_to_chan_dim(x)
         x, mean, std = self.norm(x)
         x, pad_sizes = self.pad(x)

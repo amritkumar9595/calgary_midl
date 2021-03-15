@@ -225,3 +225,75 @@ class DataTransform_rotnet:
 
         return   ksp_us/maxi , img_us/maxi,  img_us_rss/maxi , img_gt_rss/maxi ,  randint ,   mask , sens_t ,  maxi , fname
         # return   ksp_us, ksp_t ,  img_us, img_gt , img_us_np , img_gt_np , sens_t , mask ,img_us.max(),img_us_np.max(),fname
+
+
+
+class DataTransform_slicemiss:
+    """
+    Data Transformer for training U-Net models.
+    """
+
+    def __init__(self):   
+        """
+        Not required !
+        """
+    
+    def __call__(self,ksp_cmplx,fname,sensitivity,acceleration):
+        """
+        Args:
+            ksp_cmplx (numpy.array): Input k-space of the multi-coil data
+            fname (str): File name
+            sensitivity(numpy.array): ENLIVE sensitivity maps
+            acceleartion: whether to train for 5x US ksp or 10x US kspace
+
+        """
+
+        sens_t = T.to_tensor(sensitivity)
+        ksp_t = T.to_tensor(ksp_cmplx)
+        ksp_t = ksp_t.permute(2,0,1,3)
+
+        img_gt = T.ifft2(ksp_t)
+        img_gt_np = T.root_sum_of_squares(T.complex_abs(T.ifft2_np(ksp_t)))
+        
+        
+        if acceleration == 5:
+
+            if ksp_t.shape[2]==170:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R5_218x170.npy")
+            elif ksp_t.shape[2]==174:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R5_218x174.npy")
+            elif ksp_t.shape[2]==180:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R5_218x180.npy")
+        
+        elif acceleration == 10:
+
+            if ksp_t.shape[2]==170:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R10_218x170.npy")
+            elif ksp_t.shape[2]==174:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R10_218x174.npy")
+            elif ksp_t.shape[2]==180:
+                sp_r5 = np.load("/media/student1/NewVolume/MR_Reconstruction/midl/MC-MRRec-challenge/Data/poisson_sampling/R10_218x180.npy")
+        
+        
+
+        randint = random.randint(0,99)                   #to get a random mask everytime ! 
+        mask = sp_r5[randint]
+        mask = torch.from_numpy(mask)
+        mask = (torch.stack((mask,mask),dim=-1)).float()
+        
+        ksp_us = torch.where(mask == 0, torch.Tensor([0]), ksp_t)
+        
+        r_int = randint = random.randint(0,11) 
+        ksp_us0 = ksp_us.clone()
+        ksp_us0[r_int,:,:,:]=0 + 1e-8
+
+        img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2_np(ksp_us0)))
+        img_us = T.ifft2(ksp_us0)
+        img_us_rss = T.root_sum_of_squares(T.complex_abs(T.ifft2(ksp_us0)))
+
+
+        maxi = img_us_rss.max().float()
+
+        return   ksp_us0/maxi ,  img_us/maxi  , img_us_rss/maxi , 100.0*img_us_np/maxi , 100.0*img_gt_np/maxi ,sens_t, mask ,maxi,fname,r_int,img_gt/maxi
+        
+

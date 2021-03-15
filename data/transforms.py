@@ -512,7 +512,21 @@ def rotation(data,deg):
         raise ValueError('rotation should be 0, 90, 180, or 270 degrees')
     ans = to_tensor(ans) #.transpose()
     # print("ans",ans.shape)
-    return ans     
+    return ans   
+
+
+def rss_ch(out_img_cmplx,sens):
+    
+        x = complex_multiply(out_img_cmplx[...,0].unsqueeze(1), out_img_cmplx[...,1].unsqueeze(1), sens[...,0].cuda(), sens[...,1].cuda())
+        # print("X",x.shape)
+        rs = complex_abs(x)
+        # print("rs",rs.shape)
+        # rs = root_sum_of_squares(rs,1).squeeze(0)
+        # print("rs2",rs.shape)
+        # rs = rs/rs.max()
+        # rs = rs.unsqueeze(0).unsqueeze(1)
+        
+        return rs   
 
 
 
