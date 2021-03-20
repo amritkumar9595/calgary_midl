@@ -215,13 +215,13 @@ if __name__ == '__main__':
     # out_dir = "/media/student1/RemovableVolume/calgary_new/" + VOLUME + ACTION +"_volume/Track01/12-channel-R=5"
 
     
-    VOLUME = '47'
-    ACTION = 'finetune/autoencoder'
-    PRETEXT = 'rotnet'
+    VOLUME = '5'
+    ACTION = 'finetune'
+    PRETEXT = 'slicemiss'
     LAYER='0'
 
     test_data_path = "/media/student1/RemovableVolume/calgary_new/Test/test_12_channel/Test-R=5/"
-    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + PRETEXT + "/" + ACTION +"/acc_5x/" + LAYER +"_layer/0.001_lr/" + VOLUME + "_volume/best_model.pt"
+    model_path = "/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/" + PRETEXT + "/" + ACTION +"/acc_5x/" + LAYER +"_layer/0.001_lr/" + VOLUME + "_volume/10/model.pt"
     out_dir = "/media/student1/RemovableVolume/calgary_new/" + PRETEXT + "/" + VOLUME +"_volume/Track01/12-channel-R=5"
 
 

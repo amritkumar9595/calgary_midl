@@ -19,6 +19,39 @@ CHECKPOINT='/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_
 python train_var12_pretext_rotnet.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT}  --lr ${LR} --cascade ${CASCADE}
 ACC_FACTOR_5x
 
+                                                ## Rotnet + slicemiss in alternative training
+<<ACC_FACTOR_5x
+RESUME='False'
+LR2=0.000001
+LR1=0.001
+DATA_PATH="/media/student1/RemovableVolume/calgary/"
+ACC_FACTOR=5
+ACC='5x'
+EXP_DIR='/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/slicemiss_rotnet/pretext/acc_'${ACC}
+CHECKPOINT='/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/slicemiss_rotnet/pretext/acc_'${ACC}'/model.pt'
+
+python train_var12_pretext_slicemiss_rotnet.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT}  --lr1 ${LR1} --lr2 ${LR2} --cascade ${CASCADE}
+ACC_FACTOR_5x
+
+                                                ## multi-pretext learning 
+
+#<<ACC_FACTOR_5x
+RESUME='False'
+LR=0.001
+DATA_PATH="/media/student1/RemovableVolume/calgary/"
+ACC_FACTOR=5
+ACC='5x'
+EXP_DIR='/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/multi/pretext/acc_'${ACC}
+CHECKPOINT='/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/multi/pretext/acc_'${ACC}'/model.pt'
+
+python train_var12_pretext_multitask.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT}  --lr ${LR}  --cascade ${CASCADE}
+#ACC_FACTOR_5x
+
+
+
+
+
+
 
 
                                             ## 12 channel data  FINETUNING  ##
@@ -42,7 +75,7 @@ ACC_FACTOR_5x
 
                                             ## 12 channel data  FINETUNING ON ROTNET + AUTOENCODER ##
 
-#<<ACC_FACTOR_5x
+<<ACC_FACTOR_5x
 PRETEXT2='autoencoder'
 RESUME='True'
 LAYER_INIT=0  # 1 gives better results
@@ -57,7 +90,7 @@ EXP_DIR='/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_une
 CHECKPOINT='/media/student1/NewVolume/MR_Reconstruction/experiments/midl/varnet_unet/12-channels/rotnet/finetune/'${PRETEXT2}'/acc_'${ACC}'/'${LAYER_INIT}'_layer/'${LR}'_lr/'${SAMPLE_RATE}'_volume/model.pt'
 
 python train_var12_finetune_rotnet.py --batch-size ${BATCH_SIZE} --num-epochs ${NUM_EPOCHS} --device ${DEVICE} --exp-dir ${EXP_DIR}  --acceleration ${ACC_FACTOR} --sample-rate ${SAMPLE_RATE}  --data-path ${DATA_PATH} --resume ${RESUME} --checkpoint ${CHECKPOINT} --dropout ${DROPOUT} --loss ${LOSS}  --pretext-model ${PRETEXT_MODEL} --lr ${LR} --layer-init ${LAYER_INIT} --cascade ${CASCADE}
-#ACC_FACTOR_5x
+ACC_FACTOR_5x
 
 
 

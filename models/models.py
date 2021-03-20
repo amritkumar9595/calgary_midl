@@ -579,12 +579,13 @@ class network_unet(nn.Module):
             x = x.unsqueeze(0)
             
             
-            
+        # print("x=",x.shape)
+        # print("m=",m.shape)   
 
         img_mag = T.rss(x.squeeze(0),m).float()
         # x = x.squeeze(0)
         # x = x.permute(0,3,1,2)
-        # print("x=",x.shape)
+        # 
         # print("x=",x.shape)
         # x = x.permute(0,3,1,2)
         # x, mean, std = self.norm(x)
