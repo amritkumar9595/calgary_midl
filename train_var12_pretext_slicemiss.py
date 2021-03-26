@@ -375,7 +375,7 @@ def build_model(args):
     
     wacoeff = 0.1
     dccoeff = 0.1
-    cascade = args.cascade   
+    cascade = 12 #args.cascade   
     sens_chans = 8
     sens_pools = 4
 

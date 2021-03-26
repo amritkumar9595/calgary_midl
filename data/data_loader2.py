@@ -285,16 +285,16 @@ class DataTransform_slicemiss:
         
         r_int = randint = random.randint(0,11) 
         ksp_us0 = ksp_us.clone()
-        ksp_us0[r_int,:,:,:]=0 + 1e-8
+        ksp_us0[r_int,:,:,:] = 1e-8
 
 
-        degrees = ('0' , '90' , '180' , '270')
-        randint = random.randint(0,3)                   #to get a random rotation [0,90,180,270] everytime ! 
-        deg = degrees[randint]
+        # degrees = ('0' , '90' , '180' , '270')
+        # randint = random.randint(0,3)                   #to get a random rotation [0,90,180,270] everytime ! 
+        # deg = degrees[randint]
 
-        ksp_us0 = T.rotation(ksp_us0,deg) #.transpose(1,2,0)
+        # ksp_us0 = T.rotation(ksp_us0,deg) #.transpose(1,2,0)
 
-        mask = T.rotation(mask.unsqueeze(0),deg).squeeze(0)
+        # mask = T.rotation(mask.unsqueeze(0),deg).squeeze(0)
 
         img_us_np = T.root_sum_of_squares(T.complex_abs(T.ifft2_np(ksp_us0)))
         img_us = T.ifft2(ksp_us0)
